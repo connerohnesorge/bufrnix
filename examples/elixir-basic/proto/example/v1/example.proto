@@ -1,0 +1,52 @@
+syntax = "proto3";
+
+package example.v1;
+
+// Example message for demonstrating Elixir protobuf generation
+message ExampleMessage {
+  int32 id = 1;
+  string name = 2;
+  string email = 3;
+  repeated string tags = 4;
+  optional string description = 5;
+  TimestampMessage created_at = 6;
+}
+
+// Nested message to demonstrate complex types
+message TimestampMessage {
+  int64 seconds = 1;
+  int32 nanos = 2;
+}
+
+// Enum to demonstrate enum generation
+enum Status {
+  STATUS_UNSPECIFIED = 0;
+  STATUS_ACTIVE = 1;
+  STATUS_INACTIVE = 2;
+  STATUS_PENDING = 3;
+  STATUS_ARCHIVED = 4;
+}
+
+// Message with enum field
+message StatusMessage {
+  int32 id = 1;
+  Status status = 2;
+  string message = 3;
+}
+
+// Message with map field
+message ConfigMessage {
+  map<string, string> settings = 1;
+  map<int32, ExampleMessage> examples_by_id = 2;
+}
+
+// Message with oneof field
+message NotificationMessage {
+  oneof notification {
+    string email = 1;
+    string sms = 2;
+    string push = 3;
+  }
+  string content = 4;
+  TimestampMessage sent_at = 5;
+}

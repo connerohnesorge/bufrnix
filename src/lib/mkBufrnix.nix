@@ -97,6 +97,11 @@ with pkgs.lib; let
         package = pkgs.protoc-gen-dart;
         grpc.package = pkgs.protoc-gen-dart;
       };
+      elixir = {
+        package = pkgs.protoc-gen-elixir;
+        grpc.package = pkgs.protoc-gen-elixir;
+        validate.package = null; # Not yet in nixpkgs
+      };
       doc = {
         package = pkgs.protoc-gen-doc;
       };

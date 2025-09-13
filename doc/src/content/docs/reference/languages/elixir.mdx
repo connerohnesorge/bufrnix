@@ -1,0 +1,226 @@
+---
+title: Elixir Language Support
+description: Protocol Buffer and gRPC support for Elixir applications, enabling distributed systems and real-time services.
+---
+
+import { Tabs, TabItem } from "@astrojs/starlight/components";
+import { Code } from "astro:components";
+import basicConfig from "./elixir.x-basic-configuration.nix?raw";
+
+# Elixir Language Support
+
+**Status**: ✅ Full Support
+**Examples**:
+- [`examples/elixir-basic/`](https://github.com/conneroisu/bufr.nix/tree/main/examples/elixir-basic) - Basic protobuf messages
+- [`examples/elixir-grpc/`](https://github.com/conneroisu/bufr.nix/tree/main/examples/elixir-grpc) - gRPC services
+
+Elixir support provides Protocol Buffer and gRPC integration for building distributed systems, real-time applications, and microservices.
+
+## Available Plugins
+
+| Plugin                  | Description           | Generated Files          |
+| ----------------------- | --------------------- | ------------------------ |
+| **`protoc-gen-elixir`** | Base messages & gRPC  | `*.pb.ex`                |
+
+## Configuration
+
+### Basic Configuration
+
+```nix
+languages.elixir = {
+  enable = true;
+  outputPath = "lib/proto";
+};
+```
+
+### Full Configuration
+
+<Code code={basicConfig} lang="nix" title="flake.nix" />
+
+## Features
+
+### Message Generation
+
+Generates Elixir modules for all protobuf messages with:
+- Full type safety using structs
+- Binary encoding/decoding
+- JSON serialization support
+- Default values and field presence tracking
+
+### gRPC Support
+
+When enabled, generates:
+- Service modules with server behavior
+- Client stubs for service calls
+- Support for all RPC types (unary, streaming, bidirectional)
+- Error handling with proper gRPC status codes
+
+### Validation Support
+
+Provides hooks for integrating with validation libraries:
+- Field validation rules
+- Custom validation functions
+- Integration with Ecto changesets
+
+## Usage Example
+
+### Basic Message Usage
+
+```elixir
+# Create a message
+message = %MyApp.Proto.User{
+  id: 1,
+  name: "Alice",
+  email: "alice@example.com",
+  roles: ["admin", "user"]
+}
+
+# Encode to binary
+binary = MyApp.Proto.User.encode(message)
+
+# Decode from binary
+{:ok, decoded} = MyApp.Proto.User.decode(binary)
+```
+
+### gRPC Server Implementation
+
+```elixir
+defmodule MyApp.UserService.Server do
+  use GRPC.Server, service: MyApp.Proto.UserService.Service
+
+  def get_user(request, _stream) do
+    user = MyApp.Users.find(request.id)
+    %MyApp.Proto.GetUserResponse{user: user}
+  end
+
+  def list_users(request, stream) do
+    MyApp.Users.list()
+    |> Stream.map(&%MyApp.Proto.User{&1})
+    |> Enum.each(&GRPC.Server.send_reply(stream, &1))
+  end
+end
+```
+
+### gRPC Client Usage
+
+```elixir
+# Connect to server
+{:ok, channel} = GRPC.Stub.connect("localhost:50051")
+
+# Make RPC call
+request = %MyApp.Proto.GetUserRequest{id: 123}
+{:ok, response} = MyApp.Proto.UserService.Stub.get_user(channel, request)
+```
+
+## Integration with Phoenix
+
+Elixir protobuf integrates well with Phoenix applications:
+
+```elixir
+defmodule MyAppWeb.ProtoController do
+  use MyAppWeb, :controller
+
+  def show(conn, %{"id" => id}) do
+    user = MyApp.Users.get(id)
+    proto = %MyApp.Proto.User{user}
+
+    conn
+    |> put_resp_content_type("application/x-protobuf")
+    |> send_resp(200, MyApp.Proto.User.encode(proto))
+  end
+end
+```
+
+## Mix.exs Dependencies
+
+Add these dependencies to your `mix.exs`:
+
+```elixir
+defp deps do
+  [
+    {:protobuf, "~> 0.12.0"},
+    {:grpc, "~> 0.7.0"},  # If using gRPC
+    {:jason, "~> 1.4"}     # For JSON support
+  ]
+end
+```
+
+## Configuration Options
+
+### `languages.elixir`
+
+| Option           | Type                | Default       | Description                                    |
+| ---------------- | ------------------- | ------------- | ---------------------------------------------- |
+| `enable`         | `bool`              | `false`       | Enable Elixir code generation                 |
+| `package`        | `package`           | `protoc-gen-elixir` | The protoc plugin package              |
+| `outputPath`     | `string \| [string]`| `"lib"`       | Output directory for generated code           |
+| `options`        | `[string]`          | `[]`          | Options to pass to protoc-gen-elixir          |
+| `namespace`      | `string`            | `""`          | Module namespace prefix (e.g., "MyApp.Proto") |
+| `files`          | `[string] \| null`  | `null`        | Specific proto files for this language        |
+| `additionalFiles`| `[string]`          | `[]`          | Additional proto files to compile             |
+
+### `languages.elixir.grpc`
+
+| Option    | Type       | Default              | Description                      |
+| --------- | ---------- | -------------------- | -------------------------------- |
+| `enable`  | `bool`     | `false`              | Enable gRPC code generation      |
+| `package` | `package`  | `protoc-gen-elixir`  | The protoc plugin package        |
+| `options` | `[string]` | `[]`                 | Options for gRPC generation      |
+
+### `languages.elixir.validate`
+
+| Option    | Type       | Default | Description                            |
+| --------- | ---------- | ------- | -------------------------------------- |
+| `enable`  | `bool`     | `false` | Enable validation support              |
+| `package` | `package`  | `null`  | Validation package (if any)           |
+| `options` | `[string]` | `[]`    | Options for validation generation     |
+
+## Tips and Best Practices
+
+1. **Module Organization**: Use the `namespace` option to organize generated modules under your application's namespace.
+
+2. **OTP Integration**: Generated gRPC servers integrate with OTP supervision trees:
+   ```elixir
+   children = [
+     {GRPC.Server.Supervisor, endpoint: MyApp.Endpoint, port: 50051}
+   ]
+   ```
+
+3. **Error Handling**: Use proper gRPC status codes:
+   ```elixir
+   raise GRPC.RPCError, status: :not_found, message: "User not found"
+   ```
+
+4. **Testing**: Use the generated modules in tests:
+   ```elixir
+   test "encodes and decodes messages" do
+     original = %MyApp.Proto.User{id: 1, name: "Test"}
+     binary = MyApp.Proto.User.encode(original)
+     {:ok, decoded} = MyApp.Proto.User.decode(binary)
+     assert decoded == original
+   end
+   ```
+
+5. **Performance**: For high-performance scenarios, consider using binary pattern matching directly on encoded messages.
+
+## Common Issues
+
+### Module Not Found
+
+If you get "module not found" errors after generation:
+1. Ensure the `outputPath` is in your Elixir project's lib path
+2. Run `mix compile` to compile the generated modules
+3. Check that the namespace matches your project structure
+
+### gRPC Connection Issues
+
+For gRPC connection problems:
+1. Verify the server is running on the correct port
+2. Check firewall settings
+3. Ensure both client and server use the same proto definitions
+
+## See Also
+
+- [Elixir Protobuf Library](https://github.com/elixir-protobuf/protobuf)
+- [Elixir gRPC](https://github.com/elixir-grpc/grpc)
+- [Phoenix Framework Integration](https://hexdocs.pm/phoenix)
