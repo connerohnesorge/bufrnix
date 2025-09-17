@@ -427,6 +427,15 @@ test_example "java-protovalidate" \
     "gen/java/build.gradle" \
     "gen/java/pom.xml"
 
+# Test Elixir examples
+test_example "elixir-basic" \
+    "lib/proto/example/v1/example.pb.ex" \
+    "lib/proto/.formatter.exs"
+
+test_example "elixir-grpc" \
+    "lib/proto/example/v1/service.pb.ex" \
+    "lib/proto/.formatter.exs"
+
 # Summary
 echo -e "\n${YELLOW}Test Summary:${NC}"
 echo -e "${GREEN}Passed: ${#PASSED_TESTS[@]}${NC}"

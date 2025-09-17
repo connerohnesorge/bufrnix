@@ -1256,6 +1256,106 @@ with lib; {
         };
       };
 
+      # Elixir language options
+      elixir = {
+        enable = mkOption {
+          type = types.bool;
+          default = false;
+          description = "Enable Elixir code generation";
+        };
+
+        package = mkOption {
+          type = types.package;
+          defaultText = literalExpression "pkgs.protoc-gen-elixir";
+          description = "The protoc-gen-elixir package to use";
+        };
+
+        outputPath = mkOption {
+          type = types.either types.str (types.listOf types.str);
+          default = "lib";
+          description = "Output directory(ies) for generated Elixir code";
+          example = literalExpression ''
+            [
+              "lib/proto"
+              "lib/generated"
+            ]
+          '';
+        };
+
+        options = mkOption {
+          type = types.listOf types.str;
+          default = [];
+          description = "Options to pass to protoc-gen-elixir";
+        };
+
+        files = mkOption {
+          type = types.nullOr (types.listOf types.str);
+          default = null;
+          description = "Proto files to compile for Elixir only. Overrides global protoc.files. If null, uses global protoc.files.";
+          example = [
+            "./proto/services/v1/user_service.proto"
+            "./proto/common/v1/types.proto"
+          ];
+        };
+
+        additionalFiles = mkOption {
+          type = types.listOf types.str;
+          default = [];
+          description = "Additional proto files to compile for Elixir. Extends global protoc.files.";
+          example = [
+            "./proto/elixir/v1/elixir_extensions.proto"
+            "./proto/services/v1/notification_service.proto"
+          ];
+        };
+
+        namespace = mkOption {
+          type = types.str;
+          default = "";
+          description = "Elixir module namespace prefix for generated code";
+          example = "MyApp.Proto";
+        };
+
+        grpc = {
+          enable = mkOption {
+            type = types.bool;
+            default = false;
+            description = "Enable gRPC code generation for Elixir";
+          };
+
+          package = mkOption {
+            type = types.package;
+            defaultText = literalExpression "pkgs.protoc-gen-elixir";
+            description = "The protoc-gen-elixir package to use (same as parent for Elixir)";
+          };
+
+          options = mkOption {
+            type = types.listOf types.str;
+            default = [];
+            description = "Options to pass to protoc-gen-elixir for gRPC";
+          };
+        };
+
+        validate = {
+          enable = mkOption {
+            type = types.bool;
+            default = false;
+            description = "Enable validation support for Elixir protobuf messages";
+          };
+
+          package = mkOption {
+            type = types.package;
+            defaultText = literalExpression "null";
+            description = "The validation package to use (if any)";
+          };
+
+          options = mkOption {
+            type = types.listOf types.str;
+            default = [];
+            description = "Options for Elixir validation";
+          };
+        };
+      };
+
       # Documentation language options
       doc = {
         enable = mkOption {

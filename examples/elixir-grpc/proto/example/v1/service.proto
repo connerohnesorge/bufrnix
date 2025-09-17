@@ -1,0 +1,111 @@
+syntax = "proto3";
+
+package example.v1;
+
+// User message
+message User {
+  int32 id = 1;
+  string username = 2;
+  string email = 3;
+  string full_name = 4;
+  repeated string roles = 5;
+  int64 created_at = 6;
+  int64 updated_at = 7;
+}
+
+// Request/Response messages for User service
+message CreateUserRequest {
+  string username = 1;
+  string email = 2;
+  string full_name = 3;
+  string password = 4;
+}
+
+message CreateUserResponse {
+  User user = 1;
+  string message = 2;
+}
+
+message GetUserRequest {
+  int32 id = 1;
+}
+
+message GetUserResponse {
+  User user = 1;
+}
+
+message ListUsersRequest {
+  int32 page_size = 1;
+  int32 page = 2;
+  string search = 3;
+}
+
+message ListUsersResponse {
+  repeated User users = 1;
+  int32 total = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+}
+
+message UpdateUserRequest {
+  int32 id = 1;
+  string email = 2;
+  string full_name = 3;
+  repeated string roles = 4;
+}
+
+message UpdateUserResponse {
+  User user = 1;
+  string message = 2;
+}
+
+message DeleteUserRequest {
+  int32 id = 1;
+}
+
+message DeleteUserResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+// Streaming messages
+message UserEvent {
+  enum EventType {
+    EVENT_TYPE_UNSPECIFIED = 0;
+    EVENT_TYPE_CREATED = 1;
+    EVENT_TYPE_UPDATED = 2;
+    EVENT_TYPE_DELETED = 3;
+  }
+
+  EventType event_type = 1;
+  User user = 2;
+  int64 timestamp = 3;
+}
+
+message WatchUsersRequest {
+  repeated int32 user_ids = 1;
+}
+
+// User management service
+service UserService {
+  // Create a new user
+  rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
+
+  // Get a user by ID
+  rpc GetUser(GetUserRequest) returns (GetUserResponse);
+
+  // List users with pagination
+  rpc ListUsers(ListUsersRequest) returns (ListUsersResponse);
+
+  // Update user information
+  rpc UpdateUser(UpdateUserRequest) returns (UpdateUserResponse);
+
+  // Delete a user
+  rpc DeleteUser(DeleteUserRequest) returns (DeleteUserResponse);
+
+  // Stream user events
+  rpc WatchUsers(WatchUsersRequest) returns (stream UserEvent);
+
+  // Bidirectional streaming for batch operations
+  rpc BatchProcess(stream UpdateUserRequest) returns (stream UpdateUserResponse);
+}
