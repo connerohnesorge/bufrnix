@@ -1,40 +1,40 @@
 /* Bufrnix Debug Utilities
+   This file provides a set of helper functions for debugging and logging within
+   the Bufrnix ecosystem. It is designed to be imported by other Nix files
+   and provides utilities for structured logging, command tracing, and
+   environment variable-based configuration overrides.
 
-   Comprehensive debugging and logging utilities for Bufrnix operations.
-   Provides structured logging, command execution tracing, performance timing,
-   and environment variable-based configuration overrides.
-   
    Features:
-   - Configurable verbosity levels (INFO, DEBUG, TRACE)
-   - Timestamp logging with log file support
-   - Command execution formatting and timing
-   - Environment variable overrides for debug settings
-   - Error context enhancement
+   - Configurable verbosity levels (INFO, DEBUG, TRACE).
+   - Timestamped logging to either stderr or a specified log file.
+   - Tracing of executed commands for easier debugging.
+   - Performance timing for commands at the highest verbosity level.
+   - Overrides for debug settings via environment variables (`BUFRNIX_DEBUG`, etc.).
+   - Enhanced error reporting with stack traces (in Bash).
    
-   Type: DebugUtils :: AttrSet
+   Type: DebugUtils :: { lib, ... } -> AttrSet
 */
 {lib, ...}:
 with lib; {
-  /* Environment variable check script for debug configuration overrides.
-  
-     Generates shell script code that checks for BUFRNIX_DEBUG environment
-     variables and overrides debug settings accordingly.
+  /* Generates a shell script snippet to check for and apply debug-related
+     environment variables. This allows users to override the debug settings
+     from their `flake.nix` for a single run without modifying files.
      
      Environment Variables:
-     - BUFRNIX_DEBUG: Enable debug mode
-     - BUFRNIX_DEBUG_LEVEL: Set verbosity level (1-3)  
-     - BUFRNIX_DEBUG_LOG: Specify log file path
+     - `BUFRNIX_DEBUG`: If set, enables debug mode (`debug.enable = true`).
+     - `BUFRNIX_DEBUG_LEVEL`: Sets the verbosity level (1-3).
+     - `BUFRNIX_DEBUG_LOG`: Specifies a path for the log file.
      
      Type: envVarCheck :: String
   */
   envVarCheck = ''
-    # Check for environment variables to override debug settings
+    # Check for environment variables to override static debug settings.
     if [ -n "$BUFRNIX_DEBUG" ]; then
       debug_enable=true
       if [ -n "$BUFRNIX_DEBUG_LEVEL" ]; then
         debug_verbosity=$BUFRNIX_DEBUG_LEVEL
       else
-        debug_verbosity=1
+        debug_verbosity=1 # Default to INFO level if only BUFRNIX_DEBUG is set.
       fi
       if [ -n "$BUFRNIX_DEBUG_LOG" ]; then
         debug_logfile="$BUFRNIX_DEBUG_LOG"
@@ -42,27 +42,28 @@ with lib; {
     fi
   '';
 
-  /* Debug logging function with timestamps and configurable verbosity levels.
-  
-     Provides structured logging with timestamps, log level prefixes, and
-     optional file output. Only logs messages that meet the configured
-     verbosity threshold.
+  /* Generates a shell command for logging a message if debugging is enabled
+     at the specified verbosity level.
+
+     This function is the core of the logging system. It produces a string
+     of shell code that will print a timestamped, level-prefixed message
+     to either stderr or the configured log file.
      
-     Arguments:
-       level: Verbosity level (1=INFO, 2=DEBUG, 3=TRACE)
-       msg: Log message string
-       config: Bufrnix configuration containing debug settings
+     Args:
+       level (Int): The verbosity level required to print this log (1=INFO, 2=DEBUG, 3=TRACE).
+       msg (String): The message to be logged.
+       config (AttrSet): The full Bufrnix configuration, used to access debug settings.
      
      Log Levels:
-       1 - INFO: Basic operation information
-       2 - DEBUG: Detailed execution steps
-       3 - TRACE: Comprehensive timing and performance data
+       1 - INFO: General information about major steps.
+       2 - DEBUG: Detailed information about execution flow and commands.
+       3 - TRACE: Fine-grained details, including performance timing.
      
      Type: log :: Int -> String -> AttrSet -> String
      
      Example:
        log 1 "Starting protoc generation" config
-       => "2024-01-15 10:30:45 [bufrnix] INFO: Starting protoc generation"
+       => (shell code that prints) "2024-01-15 10:30:45 [bufrnix] INFO: Starting protoc generation"
   */
   log = level: msg: config: let
     shouldLog = config.debug.enable && config.debug.verbosity >= level;
@@ -80,6 +81,7 @@ with lib; {
   in
     if shouldLog
     then
+      # Direct logs to the specified file or fall back to stderr.
       if config.debug.logFile != ""
       then ''
         echo "${fullMessage}" >> ${config.debug.logFile}
@@ -89,21 +91,21 @@ with lib; {
       ''
     else "";
 
-  /* Function to print commands being executed with formatted output.
+  /* Generates shell code to print a command before it is executed.
   
-     Formats and displays commands before execution when debug verbosity
-     is 2 or higher. Useful for troubleshooting protoc command generation
-     and plugin execution.
+     This is used for tracing. When the debug verbosity is 2 (DEBUG) or higher,
+     this will log the exact command being run, which is invaluable for
+     debugging issues with protoc plugins or arguments.
      
-     Arguments:
-       cmd: Command string to be executed
-       config: Bufrnix configuration containing debug settings
+     Args:
+       cmd (String): The command string that will be executed.
+       config (AttrSet): The Bufrnix configuration.
      
      Type: printCommand :: String -> AttrSet -> String
      
      Example:
        printCommand "protoc --go_out=. example.proto" config
-       => "2024-01-15 10:30:45 [EXEC] protoc --go_out=. example.proto"
+       => (shell code that prints) "2024-01-15 10:30:45 [bufrnix] DEBUG: Executing command: \n  protoc --go_out=. example.proto"
   */
   printCommand = cmd: config: let
     shouldPrint = config.debug.enable && config.debug.verbosity >= 2;
@@ -116,24 +118,21 @@ with lib; {
     ''
     else "";
 
-  /* Function to time command execution with enhanced context and performance monitoring.
+  /* Wraps a shell command with performance timing instrumentation.
   
-     Wraps command execution with timing instrumentation when debug verbosity
-     is 3 (TRACE) or higher. Measures execution duration and preserves exit status
-     while providing detailed performance information.
+     When verbosity is 3 (TRACE), this function generates shell code that
+     records the start and end times of a command's execution, calculates the
+     duration, and logs the result. It carefully preserves the original command's
+     exit status.
      
-     Arguments:
-       cmd: Command string to be executed with timing
-       config: Bufrnix configuration containing debug settings
+     Args:
+       cmd (String): The command to be timed.
+       config (AttrSet): The Bufrnix configuration.
      
-     Returns the original command wrapped with timing instrumentation,
-     or the original command unchanged if timing is disabled.
+     Returns: The original command string if timing is disabled, or the wrapped
+              command with timing logic if enabled.
      
      Type: timeCommand :: String -> AttrSet -> String
-     
-     Example:
-       timeCommand "protoc --go_out=. example.proto" config
-       => Enhanced command with start/end timing and duration reporting
   */
   timeCommand = cmd: config: let
     shouldTime = config.debug.enable && config.debug.verbosity >= 3;
@@ -144,37 +143,38 @@ with lib; {
       echo "${timestamp} [bufrnix] TRACE: Starting command execution" >&2
       echo "  ${cmd}" >&2
       start_time=$(date +%s.%N)
+      # Execute command and capture its exit status.
       { ${cmd}; cmd_status=$?; }
       end_time=$(date +%s.%N)
+      # Calculate duration using awk for floating point arithmetic.
       duration=$(awk -v end="$end_time" -v start="$start_time" 'BEGIN{print end - start}')
       echo "${timestamp} [bufrnix] TRACE: Command completed in $duration seconds with status $cmd_status" >&2
       if [ $cmd_status -ne 0 ]; then
         echo "${timestamp} [bufrnix] ERROR: Command failed with status $cmd_status" >&2
       fi
-      (exit $cmd_status) # Preserve original exit status
+      (exit $cmd_status) # Ensure the script's exit status reflects the command's outcome.
     ''
     else cmd;
 
-  /* Function to provide enhanced error context with stack traces when possible.
+  /* Generates shell code to report an error and exit.
   
-     Generates error output with timestamps and optional bash stack traces
-     for debugging failures in protoc code generation. Exits with the
-     specified exit code after displaying the error.
+     This provides a standardized way to handle fatal errors. It prints a
+     timestamped error message and, if running in Bash, attempts to print a
+     simple stack trace to help locate the source of the error.
      
-     Arguments:
-       msg: Error message to display
-       exitCode: Exit code to use when terminating
+     Args:
+       msg (String): The error message to display.
+       exitCode (Int): The exit code to use when terminating the script.
      
      Type: enhanceError :: String -> Int -> String
      
      Example:
        enhanceError "protoc compilation failed" 1
-       => "2024-01-15 10:30:45 [bufrnix] ERROR: protoc compilation failed"
-          Stack trace: [if bash available]
-          exit 1
+       => (shell code that prints an error and then runs) "exit 1"
   */
   enhanceError = msg: exitCode: ''
     echo "$(date '+%Y-%m-%d %H:%M:%S') [bufrnix] ERROR: ${msg}" >&2
+    # If using Bash, provide a rudimentary stack trace.
     if [ -n "$BASH_VERSION" ]; then
       echo "Stack trace:" >&2
       for i in $(seq 0 $((\$\{#FUNCNAME[@]} - 1))); do
@@ -184,27 +184,22 @@ with lib; {
     exit ${toString exitCode}
   '';
 
-  /* Function to initialize debug configuration with environment variable overrides.
+  /* Generates shell script code to initialize all debug-related variables.
   
-     Generates shell script code that initializes debug configuration variables,
-     starting with values from the Nix configuration and allowing environment
-     variables to override them. Also handles log file directory creation.
+     This function creates a block of shell code that sets up local shell variables
+     (`debug_enable`, `debug_verbosity`, `debug_logfile`) based on the final
+     Nix configuration. It also includes the logic to check for environment
+     variable overrides and to prepare the log file if one is specified.
      
-     Arguments:
-       config: Bufrnix configuration containing debug settings
+     Args:
+       config (AttrSet): The final, merged Bufrnix configuration.
      
-     Returns shell script code that sets debug_enable, debug_verbosity,
-     and debug_logfile variables based on config and environment.
+     Returns: A string of shell script code for initialization.
      
      Type: getDebugConfig :: AttrSet -> String
-     
-     Environment Variable Overrides:
-       BUFRNIX_DEBUG: Override debug.enable
-       BUFRNIX_DEBUG_LEVEL: Override debug.verbosity  
-       BUFRNIX_DEBUG_LOG: Override debug.logFile
   */
   getDebugConfig = config: ''
-    # Initialize with config values
+    # Initialize shell variables with values from the Nix config.
     debug_enable=${
       if config.debug.enable
       then "true"
@@ -213,7 +208,7 @@ with lib; {
     debug_verbosity=${toString config.debug.verbosity}
     debug_logfile="${config.debug.logFile}"
 
-    # Check environment variables
+    # Check for and apply any environment variable overrides.
     if [ -n "$BUFRNIX_DEBUG" ]; then
       debug_enable=true
       if [ -n "$BUFRNIX_DEBUG_LEVEL" ]; then
@@ -224,7 +219,7 @@ with lib; {
       fi
     fi
 
-    # Create log file directory if needed
+    # If logging to a file is enabled, ensure the directory exists.
     if [ -n "$debug_logfile" ] && [ "$debug_enable" = "true" ]; then
       mkdir -p "$(dirname "$debug_logfile")" 2>/dev/null || true
       touch "$debug_logfile" 2>/dev/null || echo "Warning: Could not create log file $debug_logfile" >&2

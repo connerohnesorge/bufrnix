@@ -1,3 +1,18 @@
+/* Bufrnix Main Derivation Builder
+   This file contains the core logic for Bufrnix. It defines a function that
+   takes a user's configuration and produces a Nix derivation. This derivation
+   is a shell script that, when executed, runs the `protoc` compiler with all
+   the necessary plugins, options, and paths for the configured languages.
+
+   Key Responsibilities:
+   - Merging user configuration with default settings.
+   - Loading language-specific modules.
+   - Assembling `protoc` command-line arguments.
+   - Handling complex scenarios like multiple output paths per language.
+   - Generating a runnable shell script (`bufrnix`) that performs the code generation.
+
+   Type: mkBufrnix :: { pkgs, self, config } -> Derivation
+*/
 {
   pkgs,
   self ? null,
@@ -5,14 +20,16 @@
   ...
 }:
 with pkgs.lib; let
-  # Import our modules
+  # Import shared modules: option definitions and debug utilities.
   optionsDef = import ./bufrnix-options.nix {inherit (pkgs) lib;};
   debug = import ./utils/debug.nix {inherit (pkgs) lib;};
 
   /* Extract default values from option definitions recursively.
   
-     This function traverses option definitions and extracts their default values,
-     handling both simple options and nested attribute sets of options.
+     This function traverses the nested attribute set of option definitions
+     (from `bufrnix-options.nix`) and constructs a corresponding attribute set
+     containing only the `default` value for each option. This is used to build
+     the base configuration before merging user-provided settings.
      
      Type: extractDefaults :: AttrSet -> AttrSet
      
@@ -30,24 +47,21 @@ with pkgs.lib; let
     then mapAttrs (_: extractDefaults) options
     else options;
 
-  /* Compute proto files for a specific language
+  /* Compute the final list of proto files for a specific language.
      
-     This function determines which proto files should be compiled for a given language
-     by checking the language's files and additionalFiles configuration.
+     This function determines which proto files should be compiled for a given
+     language. It prioritizes the language-specific `files` list if it is defined.
+     If not, it falls back to the global `protoc.files`. In both cases, it appends
+     any `additionalFiles` specified for the language.
      
-     Type: getFilesForLanguage :: String -> AttrSet -> Config -> [String]
+     Type: getFilesForLanguage :: String -> AttrSet -> AttrSet -> [String]
      
      Args:
-       - langName: The name of the language (e.g., "go", "js", "python")
-       - langConfig: The language configuration from cfg.languages.<lang>
-       - cfg: The full bufrnix configuration
+       langName: The name of the language (e.g., "go", "js").
+       langConfig: The configuration for the specific language (e.g., `cfg.languages.go`).
+       cfg: The full, merged bufrnix configuration.
        
-     Returns:
-       - List of proto files to compile for this language
-       
-     Logic:
-       - If langConfig.files is not null: use langConfig.files + langConfig.additionalFiles
-       - If langConfig.files is null: use cfg.protoc.files + langConfig.additionalFiles
+     Returns: A list of absolute paths to proto files.
   */
   getFilesForLanguage = langName: langConfig: cfg:
     let
@@ -57,16 +71,20 @@ with pkgs.lib; let
       allFiles = baseFiles ++ langConfig.additionalFiles;
     in allFiles;
 
+  # `defaultConfig`: The base configuration created from the default values in `bufrnix-options.nix`.
   defaultConfig = extractDefaults optionsDef.options;
 
-  # Add package defaults
-  # For protoc-gen-js on macOS, we have build issues
-  # Set to null on Darwin to avoid build failures
+  # `jsPackage`: A special case for `protoc-gen-js`.
+  # There are known build issues on macOS (Darwin), so we set its package to `null`
+  # on that platform to avoid build failures. The user can override this if needed.
   jsPackage =
     if pkgs.stdenv.isDarwin
     then null
     else pkgs.protoc-gen-js;
 
+  # `packageDefaults`: Defines the default Nix package for each protoc plugin.
+  # This provides a sensible default for every supported plugin, which users can override
+  # in their configuration if they need a specific version or a custom package.
   packageDefaults = {
     languages = {
       go = {
@@ -146,14 +164,17 @@ with pkgs.lib; let
     };
   };
 
-  # Merge defaults with user config
+  # `cfg`: The final, merged configuration.
+  # This is the single source of truth for the build script. It is created by
+  # recursively merging the `defaultConfig`, `packageDefaults`, and the user-provided `config`.
+  # The user's configuration takes precedence.
   cfg = recursiveUpdate (recursiveUpdate defaultConfig packageDefaults) config;
 
-  /* Normalize output path from string or array to consistent array format.
+  /* Normalize a language's output path to a list of strings.
   
-     Bufrnix supports both single output paths (as strings) and multiple output paths
-     (as arrays) for each language. This function ensures all paths are represented
-     as arrays for consistent processing.
+     Bufrnix allows `outputPath` to be a single string or a list of strings.
+     This function ensures that the path is always a list, simplifying iteration
+     and processing in the rest of the script.
      
      Type: normalizeOutputPath :: (String | [String]) -> [String]
      
@@ -166,20 +187,21 @@ with pkgs.lib; let
     then path
     else [path];
 
-  # Load language modules based on configuration
+  # `languageNames`: A list of all available languages defined in the configuration.
   languageNames = attrNames cfg.languages;
 
-  /* Load a language module if enabled in the configuration.
+  /* Load a language module if it is enabled in the configuration.
   
-     Conditionally imports and instantiates a language module based on whether
-     the language is enabled in the configuration. Language modules provide
-     protoc plugins, runtime inputs, and generation hooks.
+     This function dynamically imports and instantiates a language module (from `../languages/`)
+     if `cfg.languages.<language>.enable` is true. The module is passed the full
+     configuration, allowing it to generate the correct `protoc` plugins, runtime inputs,
+     and shell hooks based on the user's settings.
      
      Type: loadLanguageModule :: String -> AttrSet
      
      Example:
        loadLanguageModule "go" 
-       => { runtimeInputs = [protoc-gen-go]; protocPlugins = ["--go_out=."]; ... }
+       => { runtimeInputs = [pkgs.protoc-gen-go]; protocPlugins = ["--go_out=."]; ... }
   */
   loadLanguageModule = language:
     if cfg.languages.${language}.enable
@@ -193,15 +215,18 @@ with pkgs.lib; let
       }
     else {};
 
-  # Load all enabled language modules for extracting runtime inputs only
-  # We need runtime inputs globally, but hooks will be handled per output path
+  # `loadedLanguageModulesForInputs`: A list of all enabled language modules.
+  # This list is specifically created to aggregate the `runtimeInputs` from all
+  # enabled languages. `runtimeInputs` are needed globally for the top-level
+  # shell derivation, so we collect them here before handling path-specific logic.
+  # We normalize the output path to a single path to avoid module evaluation errors.
   loadedLanguageModulesForInputs =
     map (
       language:
         if cfg.languages.${language}.enable
         then let
           langCfg = cfg.languages.${language};
-          # Normalize to single path for runtime input extraction
+          # Normalize to a single path just for this extraction.
           normalizedLangCfg =
             langCfg
             // {
@@ -221,42 +246,43 @@ with pkgs.lib; let
     )
     languageNames;
 
-  # Extract runtime inputs from language modules
+  # `languageRuntimeInputs`: The flattened list of all Nix packages required at runtime.
+  # This is created by concatenating the `runtimeInputs` from all modules loaded above.
   languageRuntimeInputs = concatMap (module: module.runtimeInputs or []) loadedLanguageModulesForInputs;
 
-  /* Generate protoc commands for each enabled language with multiple output paths.
+  /* Generate the full command structure for all enabled languages and output paths.
   
-     This function creates the command structure for protoc code generation across
-     all enabled languages and their configured output paths. It handles multi-output
-     scenarios where a single language can generate code to multiple directories.
+     This is a critical function that orchestrates the generation process. It iterates
+     through each enabled language and each of its configured `outputPaths`. For each
+     combination, it re-evaluates the language module with a modified configuration
+     specific to that path. This allows hooks and plugins to be tailored to each
+     output directory.
      
-     Returns a list of language command objects, each containing:
-     - language: The language name
-     - commands: List of path-specific command objects with:
-       * outputPath: Target directory for generated code
-       * runtimeInputs: Required packages for generation
-       * protocPlugins: protoc command-line plugin arguments
-       * initHooks: Shell commands run before generation
-       * generateHooks: Shell commands run after generation
+     Returns: A list of language command objects.
+     Type: `[{ language :: String; commands :: [{ outputPath, runtimeInputs, ... }]; }]`
      
-     Type: generateProtocCommands :: [{ language :: String; commands :: [Command]; }]
+     Example Return Structure:
+       [
+         { language = "go"; commands = [ { outputPath = "gen/go"; ... } ]; }
+         { language = "js"; commands = [ { outputPath = "web/src"; ... }, { outputPath = "api/src"; ... } ]; }
+       ]
   */
   generateProtocCommands = let
     enabledLanguages = filter (lang: cfg.languages.${lang}.enable) languageNames;
 
-    # For each enabled language, get the normalized output paths and generate commands
+    # For each enabled language, generate a list of commands for its output paths.
     languageCommands =
       map (
         language: let
           langCfg = cfg.languages.${language};
-          module = loadLanguageModule language;
           outputPaths = normalizeOutputPath langCfg.outputPath;
 
-          # Generate a command for each output path
+          # Generate a command object for each unique output path.
           pathCommands =
             map (
               outputPath: let
-                # Create modified cfg with single outputPath for this iteration
+                # Create a temporary, modified config with just this single output path.
+                # This ensures the language module generates hooks and plugins correctly for this path.
                 modifiedLangCfg = langCfg // {outputPath = outputPath;};
                 modifiedCfg =
                   cfg
@@ -268,7 +294,7 @@ with pkgs.lib; let
                       };
                   };
 
-                # Load module with modified config
+                # Load the language module with the path-specific configuration.
                 modifiedModule = import ../languages/${language} {
                   inherit pkgs;
                   inherit (pkgs) lib;
@@ -276,6 +302,7 @@ with pkgs.lib; let
                   cfg = modifiedLangCfg;
                 };
               in {
+                # Collect all the outputs from the module for this path.
                 inherit outputPath;
                 runtimeInputs = modifiedModule.runtimeInputs or [];
                 protocPlugins = modifiedModule.protocPlugins or [];
@@ -293,9 +320,11 @@ with pkgs.lib; let
   in
     languageCommands;
 in
+  # The final output: a shell application derivation named "bufrnix".
   pkgs.writeShellApplication {
     name = "bufrnix";
 
+    # All required packages (protoc, plugins, etc.) are added to the runtime environment.
     runtimeInputs = with pkgs;
       [
         bash
@@ -303,16 +332,21 @@ in
       ]
       ++ languageRuntimeInputs;
 
+    # The core of the derivation: the generated shell script.
     text = ''
+      # --- Bufrnix Generation Script ---
+
       ${debug.log 1 "Starting code generation with per-language file support" cfg}
 
+      # --- Initial Setup ---
       protoc_cmd="${pkgs.protobuf}/bin/protoc"
       base_protoc_args="-I ${concatStringsSep " -I " cfg.protoc.includeDirectories}"
 
-      # Handle nanopb options files if nanopb is enabled
+      # --- Special Handlers ---
+      # Handle `.options` files for nanopb if it's enabled for the C language.
       nanopb_opts=""
       ${optionalString (cfg.languages.c.enable && cfg.languages.c.nanopb.enable) ''
-        # Find nanopb options files and add them to protoc_args
+        # Find a nanopb options file and add it to the protoc arguments.
         options_file=$(find . -name "*.options" -type f 2>/dev/null | head -1)
         if [ -n "$options_file" ]; then
           echo "Found nanopb options file: $options_file"
@@ -320,61 +354,62 @@ in
         fi
       ''}
 
-      # Generate protoc commands for each unique output path combination
+      # --- Main Generation Loop ---
+      # This section is generated by Nix by iterating over the `generateProtocCommands` structure.
+      # It creates a block of shell code for each language and each output path.
       ${concatMapStrings (
           langCmd:
             concatMapStrings (pathCmd: ''
+              # Generating for language: ${langCmd.language}, Path: ${pathCmd.outputPath}
               echo "Generating ${langCmd.language} code for output path: ${pathCmd.outputPath}"
 
-              # Compute proto files for this specific language
+              # Step 1: Compute the list of .proto files for this specific language.
               lang_proto_files=""
               ${
                 let
-                  # Get the language configuration
                   langConfig = cfg.languages.${langCmd.language};
-                  # Compute files for this language
                   languageFiles = getFilesForLanguage langCmd.language langConfig cfg;
                 in
+                  # If the file list is empty, find all .proto files in the source directories.
                   if (languageFiles == [])
                   then
-                    # Fallback to finding files from source directories
                     if (cfg.protoc.sourceDirectories == [])
                     then ''
-                      # Find all proto files from root
+                      # Fallback to finding all proto files from the configured root.
                       lang_proto_files=$(find "${cfg.root}" -name "*.proto" -type f)
                     ''
                     else ''
-                      # Find proto files from specified directories
+                      # Find proto files from the specified source directories.
                       ${concatMapStrings (dir: ''
                           lang_proto_files="$lang_proto_files $(find "${dir}" -name "*.proto" -type f)"
                         '')
                         cfg.protoc.sourceDirectories}
                     ''
                   else ''
-                    # Use computed language-specific files
+                    # Use the specific list of files computed for this language.
                     lang_proto_files="${concatStringsSep " " languageFiles}"
                   ''
               }
 
               echo "Proto files for ${langCmd.language}: $lang_proto_files"
 
-              # Run initialization hooks for this path
+              # Step 2: Run pre-generation hooks for this path.
               ${pathCmd.initHooks}
 
-              # Create directory for this output path
+              # Step 3: Ensure the output directory exists.
               mkdir -p "${pathCmd.outputPath}"
 
-              # Build protoc command for this specific output path
+              # Step 4: Build the full protoc command with all plugins for this path.
               protoc_args="$base_protoc_args $nanopb_opts"
               ${concatMapStrings (plugin: ''
                   protoc_args="$protoc_args ${plugin}"
                 '')
                 pathCmd.protocPlugins}
 
-              # Execute protoc for this output path with language-specific files
+              # Step 5: Execute the protoc compiler.
               eval "$protoc_cmd $protoc_args $lang_proto_files"
 
-              # Run generation hooks for this path
+              # Step 6: Run post-generation hooks for this path.
               ${pathCmd.generateHooks}
 
             '')
