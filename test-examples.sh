@@ -285,11 +285,6 @@ test_example "go-struct-transformer" \
     "gen/go/example/v1/product.pb.go" \
     "gen/go/example/v1/transform/product_transformer.go"
 
-# TODO: Fix JavaScript ES modules example (needs verification after Connect-ES integration)
-# test_example "js-es-modules" \
-#     "src/generated/product_pb.ts" \
-#     "src/generated/user_pb.ts"
-
 # Test JavaScript gRPC-Web example
 test_example "js-grpc-web" \
     "proto/gen/js/user_grpc_web_pb.js" \
@@ -342,10 +337,6 @@ test_example "ts-flake-parts" \
 test_example "python-flake-parts" \
     "proto/gen/python/greeter_pb2.py" \
     "proto/gen/python/greeter_pb2_grpc.py"
-
-# TODO: Fix PHP features test (complex multi-config setup)
-# test_example "php-features-test" \
-#     "gen/php/basic/Test/V1/TestMessage.php"
 
 # Test PHP gRPC RoadRunner example
 test_example "php-grpc-roadrunner" \
