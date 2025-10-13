@@ -62,7 +62,6 @@
                     enable = true;
                     target = "ts";
                   };
-                  connect.enable = true;
                 };
 
                 # Python with multiple output paths for development and distribution
