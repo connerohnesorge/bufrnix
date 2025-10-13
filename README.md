@@ -201,7 +201,7 @@ Bufrnix doesn't replace Buf - it **extends** the Protocol Buffer ecosystem with 
 </tr>
 <tr>
 <td>🔧 <strong>Rich Plugin Ecosystem</strong></td>
-<td>gRPC, Connect, gRPC-Web, gRPC-Gateway, Twirp, and validation</td>
+<td>gRPC, gRPC-Web, gRPC-Gateway, Twirp, and validation</td>
 </tr>
 <tr>
 <td>📦 <strong>Zero Setup</strong></td>
@@ -350,7 +350,6 @@ Generate code for multiple languages simultaneously:
           grpc.enable = true;
           gateway.enable = true;      # HTTP/JSON transcoding
           validate.enable = true;     # Message validation
-          connect.enable = true;      # Modern Connect protocol
         };
         
         # Dart for Flutter applications
@@ -367,7 +366,6 @@ Generate code for multiple languages simultaneously:
           outputPath = "src/proto";
           packageName = "my-proto";
           es.enable = true;           # Modern ECMAScript modules
-          connect.enable = true;      # Connect-ES for modern RPC
           grpcWeb.enable = true;      # Browser-compatible gRPC
           twirp.enable = true;        # Twirp RPC framework
         };
@@ -429,12 +427,6 @@ languages.go = {
     enable = true;
     options = ["lang=go"];
   };
-  
-  # Modern Connect protocol
-  connect = {
-    enable = true;
-    options = ["paths=source_relative"];
-  };
 };
 ```
 
@@ -456,16 +448,7 @@ languages.js = {
       "import_extension=.js"         # ES module extensions
     ];
   };
-  
-  # Connect-ES for type-safe RPC
-  connect = {
-    enable = true;
-    options = [
-      "target=ts"
-      "import_extension=.js"
-    ];
-  };
-  
+
   # gRPC-Web for browser compatibility
   grpcWeb = {
     enable = true;
@@ -481,8 +464,8 @@ languages.js = {
 
 | Language | Status | Plugins & Features | Output |
 |----------|---------|-------------------|--------|
-| **Go** | ✅ Full | `protoc-gen-go`, gRPC, Connect, Gateway, Validation, VTProtobuf, Struct Transformer | Standard Go packages with comprehensive ecosystem |
-| **JavaScript/TypeScript** | ✅ Full | ES modules, gRPC-Web, Connect-ES, Twirp, ts-proto, Protovalidate | Modern JS/TS with type definitions |
+| **Go** | ✅ Full | `protoc-gen-go`, gRPC, Gateway, Validation, VTProtobuf, Struct Transformer | Standard Go packages with comprehensive ecosystem |
+| **JavaScript/TypeScript** | ✅ Full | ES modules, gRPC-Web, Twirp, ts-proto, Protovalidate | Modern JS/TS with type definitions |
 | **Python** | ✅ Full | Standard protoc, gRPC, mypy, betterproto, type stubs | Python packages with optional typing |
 | **Dart** | ✅ Full | `protoc-gen-dart`, gRPC support | Flutter/server Dart classes with type safety |
 | **PHP** | ✅ Full | Standard protoc, Twirp, Async, Laravel, Symfony, gRPC, RoadRunner | PSR-4 compatible classes with framework integration |
@@ -490,7 +473,7 @@ languages.js = {
 | **C++** | ✅ Full | `protoc-gen-cpp`, gRPC, CMake helpers | Native C++ classes with CMake integration |
 | **Swift** | ✅ Full | `protoc-gen-swift` | iOS/macOS Swift classes with SwiftProtobuf |
 | **C#** | ✅ Full | `protoc-gen-csharp`, gRPC | .NET compatible classes with gRPC support |
-| **Kotlin** | ✅ Full | `protoc-gen-kotlin`, gRPC, Connect | JVM Kotlin classes with modern RPC support |
+| **Kotlin** | ✅ Full | `protoc-gen-kotlin`, gRPC | JVM Kotlin classes with modern RPC support |
 | **Scala** | ✅ Full | `protoc-gen-scala`, gRPC | Scala classes with functional programming patterns |
 | **C** | ✅ Full | protobuf-c, nanopb | Embedded-friendly C implementations |
 | **Documentation** | ✅ Full | HTML/SVG generation, MDX templates | Rich documentation output formats |
@@ -528,7 +511,7 @@ nix develop
 npm install && npm run build && npm start
 ```
 - Multiple JavaScript output formats
-- Connect-ES and gRPC-Web clients
+- gRPC-Web and Twirp clients
 - TypeScript integration
 
 ### 🐘 [PHP Twirp Example](examples/php-twirp/)
@@ -626,7 +609,7 @@ Each language module supports:
 - `enable`: Boolean to enable/disable the language
 - `outputPath`: Where to place generated files (relative to root)
 - `options`: Array of options passed to the base protoc plugin
-- Plugin-specific configuration (e.g., `grpc.enable`, `connect.enable`)
+- Plugin-specific configuration (e.g., `grpc.enable`, `validate.enable`)
 
 See the [Language Modules Documentation](src/languages/README.md) for complete details.
 
@@ -726,7 +709,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - [Protocol Buffers](https://developers.google.com/protocol-buffers) - Google's language-neutral data serialization
 - [Nix](https://nixos.org/) - Reproducible package management and builds
-- [Connect](https://connect.build/) - Modern, type-safe RPC framework
 - [gRPC](https://grpc.io/) - High-performance RPC framework
 - [Twirp](https://github.com/twitchtv/twirp) - Simple RPC framework for service-to-service communication
 
