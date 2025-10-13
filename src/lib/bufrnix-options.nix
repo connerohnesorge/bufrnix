@@ -11,7 +11,7 @@
    
    Supported Languages:
    - Go: Complete ecosystem with gRPC, Connect, Gateway, Validate, etc.
-   - JavaScript/TypeScript: ES modules, Connect-ES, gRPC-Web, Twirp
+   - JavaScript/TypeScript: ES modules, gRPC-Web, Twirp
    - Python: Standard protobuf, gRPC, betterproto, mypy integration
    - Java: Standard protobuf, gRPC, validation
    - C#: .NET support with project file generation
@@ -896,40 +896,6 @@ with lib; {
             type = types.str;
             default = ""; # Let protoc-gen-es handle defaults
             description = "Import extension to use (e.g., '.js' for Node.js ES modules)";
-          };
-
-          generatePackageJson = mkOption {
-            type = types.bool;
-            default = false;
-            description = "Generate package.json for the generated code";
-          };
-
-          packageName = mkOption {
-            type = types.str;
-            default = "";
-            description = "Package name for generated package.json";
-          };
-        };
-
-        # Connect-ES for RPC
-        connect = {
-          enable = mkOption {
-            type = types.bool;
-            default = false;
-            description = "Enable Connect-ES code generation for JavaScript (modern RPC)";
-          };
-
-          package = mkOption {
-            type = types.nullOr types.package;
-            default = null;
-            defaultText = literalExpression "null";
-            description = "The protoc-gen-connect-es package to use (deprecated - functionality integrated into protoc-gen-es v2)";
-          };
-
-          options = mkOption {
-            type = types.listOf types.str;
-            default = [];
-            description = "Options to pass to protoc-gen-connect-es";
           };
 
           generatePackageJson = mkOption {
