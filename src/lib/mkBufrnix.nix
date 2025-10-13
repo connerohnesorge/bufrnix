@@ -143,6 +143,10 @@ with pkgs.lib; let
       scala = {
         package = pkgs.callPackage ../packages/scalapb {};
       };
+      proto = {
+        # Proto operations don't need special packages - just coreutils
+        # Package defaults are handled by the copier sub-module
+      };
     };
   };
 

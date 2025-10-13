@@ -1697,6 +1697,136 @@ with lib; {
         };
       };
 
+      # Proto language options (file operations, copying, etc.)
+      proto = {
+        enable = mkOption {
+          type = types.bool;
+          default = false;
+          description = "Enable proto file operations (copying, etc.)";
+        };
+
+        outputPath = mkOption {
+          type = types.either types.str (types.listOf types.str);
+          default = "proto";
+          description = "Default output directory(ies) for proto operations";
+          example = literalExpression ''
+            [
+              "backend/proto"
+              "frontend/src/proto"
+            ]
+          '';
+        };
+
+        files = mkOption {
+          type = types.nullOr (types.listOf types.str);
+          default = null;
+          description = "Proto files to operate on. Overrides global protoc.files. If null, uses global protoc.files.";
+          example = [
+            "./proto/api/v1/user_service.proto"
+            "./proto/common/v1/types.proto"
+          ];
+        };
+
+        additionalFiles = mkOption {
+          type = types.listOf types.str;
+          default = [];
+          description = "Additional proto files to operate on. Extends global protoc.files.";
+          example = [
+            "./proto/internal/v1/admin_service.proto"
+            "./proto/mobile/v1/push_notifications.proto"
+          ];
+        };
+
+        # Proto copier sub-module for copying proto files
+        copier = {
+          enable = mkOption {
+            type = types.bool;
+            default = false;
+            description = "Enable proto file copying";
+          };
+
+          outputPath = mkOption {
+            type = types.either types.str (types.listOf types.str);
+            default = ["proto/copy"];
+            description = "Output directory(ies) for copied proto files";
+            example = literalExpression ''
+              [
+                "backend/proto"
+                "frontend/src/proto"
+                "shared/proto"
+              ]
+            '';
+          };
+
+          preserveStructure = mkOption {
+            type = types.bool;
+            default = true;
+            description = "Preserve directory structure when copying proto files";
+          };
+
+          flattenFiles = mkOption {
+            type = types.bool;
+            default = false;
+            description = "Flatten all proto files into output directory root (overrides preserveStructure)";
+          };
+
+          includePatterns = mkOption {
+            type = types.listOf types.str;
+            default = ["*.proto"];
+            description = "File patterns to include when copying proto files";
+            example = [
+              "*.proto"
+              "api/**/*.proto"
+              "common/**/*.proto"
+            ];
+          };
+
+          excludePatterns = mkOption {
+            type = types.listOf types.str;
+            default = [];
+            description = "File patterns to exclude when copying proto files";
+            example = [
+              "**/internal/**"
+              "**/test/**"
+              "**/*_test.proto"
+            ];
+          };
+
+          filePrefix = mkOption {
+            type = types.str;
+            default = "";
+            description = "Prefix to add to copied proto file names";
+            example = "external_";
+          };
+
+          fileSuffix = mkOption {
+            type = types.str;
+            default = "";
+            description = "Suffix to add to copied proto file names (before .proto extension)";
+            example = "_copy";
+          };
+
+          files = mkOption {
+            type = types.nullOr (types.listOf types.str);
+            default = null;
+            description = "Proto files to copy. Overrides parent proto.files and global protoc.files. If null, inherits from parent.";
+            example = [
+              "./proto/api/v1/user_service.proto"
+              "./proto/common/v1/types.proto"
+            ];
+          };
+
+          additionalFiles = mkOption {
+            type = types.listOf types.str;
+            default = [];
+            description = "Additional proto files to copy. Extends inherited file list.";
+            example = [
+              "./proto/extras/v1/optional_service.proto"
+            ];
+          };
+        };
+      };
+
       # C# language options
       csharp = {
         enable = mkOption {

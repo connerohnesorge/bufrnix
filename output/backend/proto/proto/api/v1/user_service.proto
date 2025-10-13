@@ -1,0 +1,85 @@
+syntax = "proto3";
+
+package api.v1;
+
+import "common/v1/types.proto";
+import "google/protobuf/timestamp.proto";
+
+// User service for managing user accounts
+service UserService {
+  // Create a new user
+  rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
+  
+  // Get user by ID
+  rpc GetUser(GetUserRequest) returns (GetUserResponse);
+  
+  // List users with pagination
+  rpc ListUsers(ListUsersRequest) returns (ListUsersResponse);
+  
+  // Update user information
+  rpc UpdateUser(UpdateUserRequest) returns (UpdateUserResponse);
+  
+  // Delete a user
+  rpc DeleteUser(DeleteUserRequest) returns (DeleteUserResponse);
+}
+
+message CreateUserRequest {
+  string email = 1;
+  string name = 2;
+  common.v1.UserRole role = 3;
+}
+
+message CreateUserResponse {
+  string user_id = 1;
+  google.protobuf.Timestamp created_at = 2;
+}
+
+message GetUserRequest {
+  string user_id = 1;
+}
+
+message GetUserResponse {
+  User user = 1;
+}
+
+message ListUsersRequest {
+  int32 page_size = 1;
+  string page_token = 2;
+  common.v1.UserRole role_filter = 3;
+}
+
+message ListUsersResponse {
+  repeated User users = 1;
+  string next_page_token = 2;
+  int32 total_count = 3;
+}
+
+message UpdateUserRequest {
+  string user_id = 1;
+  string name = 2;
+  common.v1.UserRole role = 3;
+}
+
+message UpdateUserResponse {
+  User user = 1;
+  google.protobuf.Timestamp updated_at = 2;
+}
+
+message DeleteUserRequest {
+  string user_id = 1;
+}
+
+message DeleteUserResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message User {
+  string id = 1;
+  string email = 2;
+  string name = 3;
+  common.v1.UserRole role = 4;
+  google.protobuf.Timestamp created_at = 5;
+  google.protobuf.Timestamp updated_at = 6;
+  bool active = 7;
+}

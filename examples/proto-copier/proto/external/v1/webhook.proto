@@ -1,0 +1,68 @@
+syntax = "proto3";
+
+package external.v1;
+
+import "common/v1/types.proto";
+import "google/protobuf/timestamp.proto";
+
+// Webhook definitions for external integrations
+service WebhookService {
+  // Register a new webhook
+  rpc RegisterWebhook(RegisterWebhookRequest) returns (RegisterWebhookResponse);
+  
+  // Test webhook delivery
+  rpc TestWebhook(TestWebhookRequest) returns (TestWebhookResponse);
+}
+
+message RegisterWebhookRequest {
+  string url = 1;
+  repeated EventType events = 2;
+  string secret = 3;
+}
+
+message RegisterWebhookResponse {
+  string webhook_id = 1;
+  google.protobuf.Timestamp created_at = 2;
+}
+
+message TestWebhookRequest {
+  string webhook_id = 1;
+  EventType event_type = 2;
+}
+
+message TestWebhookResponse {
+  bool success = 1;
+  int32 http_status = 2;
+  string response_body = 3;
+}
+
+enum EventType {
+  EVENT_TYPE_UNSPECIFIED = 0;
+  EVENT_TYPE_USER_CREATED = 1;
+  EVENT_TYPE_USER_UPDATED = 2;
+  EVENT_TYPE_USER_DELETED = 3;
+  EVENT_TYPE_SYSTEM_ALERT = 4;
+}
+
+// Webhook payload sent to external systems
+message WebhookPayload {
+  string event_id = 1;
+  EventType event_type = 2;
+  google.protobuf.Timestamp timestamp = 3;
+  oneof data {
+    UserEventData user_event = 4;
+    SystemEventData system_event = 5;
+  }
+}
+
+message UserEventData {
+  string user_id = 1;
+  string action = 2;
+  map<string, string> metadata = 3;
+}
+
+message SystemEventData {
+  string alert_type = 1;
+  string severity = 2;
+  string message = 3;
+}

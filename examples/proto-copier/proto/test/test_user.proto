@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package test;
+
+import "api/v1/user_service.proto";
+
+// Test proto file - should be excluded from production copies
+service TestUserService {
+  rpc CreateTestUser(CreateTestUserRequest) returns (api.v1.CreateUserResponse);
+  rpc CleanupTestUsers(CleanupTestUsersRequest) returns (CleanupTestUsersResponse);
+}
+
+message CreateTestUserRequest {
+  string test_scenario = 1;
+  map<string, string> test_data = 2;
+}
+
+message CleanupTestUsersRequest {
+  string test_scenario = 1;
+  bool force = 2;
+}
+
+message CleanupTestUsersResponse {
+  int32 deleted_count = 1;
+}

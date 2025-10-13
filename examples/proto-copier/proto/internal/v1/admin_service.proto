@@ -1,0 +1,57 @@
+syntax = "proto3";
+
+package internal.v1;
+
+import "common/v1/types.proto";
+
+// Internal admin service - should not be exposed publicly
+service AdminService {
+  // Get system statistics
+  rpc GetSystemStats(GetSystemStatsRequest) returns (GetSystemStatsResponse);
+  
+  // Perform database maintenance
+  rpc PerformMaintenance(PerformMaintenanceRequest) returns (PerformMaintenanceResponse);
+  
+  // Bulk operations
+  rpc BulkDeleteUsers(BulkDeleteUsersRequest) returns (BulkDeleteUsersResponse);
+}
+
+message GetSystemStatsRequest {
+  // Empty request
+}
+
+message GetSystemStatsResponse {
+  int64 total_users = 1;
+  int64 active_users = 2;
+  int64 total_requests_today = 3;
+  double average_response_time_ms = 4;
+  map<string, int64> endpoint_stats = 5;
+}
+
+message PerformMaintenanceRequest {
+  enum MaintenanceType {
+    MAINTENANCE_TYPE_UNSPECIFIED = 0;
+    MAINTENANCE_TYPE_CLEANUP = 1;
+    MAINTENANCE_TYPE_REINDEX = 2;
+    MAINTENANCE_TYPE_BACKUP = 3;
+  }
+  
+  MaintenanceType type = 1;
+  bool force = 2;
+}
+
+message PerformMaintenanceResponse {
+  bool success = 1;
+  string message = 2;
+  int64 duration_seconds = 3;
+}
+
+message BulkDeleteUsersRequest {
+  repeated string user_ids = 1;
+  bool permanent = 2;
+}
+
+message BulkDeleteUsersResponse {
+  int32 deleted_count = 1;
+  repeated string failed_ids = 2;
+}
