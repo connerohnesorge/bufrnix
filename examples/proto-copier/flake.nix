@@ -4,6 +4,7 @@
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
+        # bufrnix.url = "github:conneroisu/bufrnix";
     bufrnix.url = "path:../..";
     bufrnix.inputs.nixpkgs.follows = "nixpkgs";
   };
