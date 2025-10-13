@@ -89,7 +89,7 @@ with pkgs.lib; let
       js = {
         package = jsPackage;
         es.package = pkgs.protoc-gen-es;
-        connect.package = pkgs.protoc-gen-connect-es;
+        # connect.package removed - Connect functionality integrated into protoc-gen-es v2
         grpcWeb.package = pkgs.protoc-gen-grpc-web;
         twirp.package = pkgs.protoc-gen-twirp_js;
       };
