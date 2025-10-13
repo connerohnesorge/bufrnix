@@ -45,12 +45,6 @@
                   packageName = "@example/proto-ts";
                   importExtension = ".js";
                 };
-                # Connect-ES for modern RPC (disabled due to plugin issues)
-                # connect = {
-                #   enable = true;
-                #   generatePackageJson = true;
-                #   packageName = "@example/connect-ts";
-                # };
                 # TypeScript validation support (disabled for now)
                 # protovalidate = {
                 #   enable = true;
@@ -84,7 +78,6 @@
             echo "This example demonstrates:"
             echo "  • Flake-parts integration with bufrnix"
             echo "  • TypeScript protobuf generation with Protobuf-ES"
-            echo "  • Connect-ES for modern RPC"
             echo "  • Protovalidate-ES for validation"
             echo ""
             echo "Commands:"
@@ -100,7 +93,6 @@
             echo ""
             echo "Features enabled:"
             echo "  ✅ Protobuf-ES (TypeScript generator)"
-            echo "  ✅ Connect-ES (modern RPC framework)"
             echo "  ✅ Protovalidate-ES (validation support)"
             echo "  ✅ Flake-parts integration"
           '';
