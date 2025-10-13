@@ -880,6 +880,18 @@ with lib; {
             description = "The protoc-gen-es package to use";
           };
 
+          outputPath = mkOption {
+            type = types.nullOr (types.either types.str (types.listOf types.str));
+            default = null;
+            description = "Output directory(ies) for ES module generated code. If null, uses parent js.outputPath.";
+            example = literalExpression ''
+              [
+                "proto/gen/js"
+                "src/proto"
+              ]
+            '';
+          };
+
           options = mkOption {
             type = types.listOf types.str;
             default = ["target=ts"]; # Default to TypeScript output
@@ -925,6 +937,13 @@ with lib; {
             description = "The protoc-gen-grpc-web package to use";
           };
 
+          outputPath = mkOption {
+            type = types.nullOr (types.either types.str (types.listOf types.str));
+            default = null;
+            description = "Output directory(ies) for gRPC-Web generated code. If null, uses parent js.outputPath.";
+            example = "proto/gen/grpc-web";
+          };
+
           options = mkOption {
             type = types.listOf types.str;
             default = [];
@@ -956,6 +975,13 @@ with lib; {
             type = types.package;
             defaultText = literalExpression "pkgs.protoc-gen-twirp_js";
             description = "The protoc-gen-twirp_js package to use";
+          };
+
+          outputPath = mkOption {
+            type = types.nullOr (types.either types.str (types.listOf types.str));
+            default = null;
+            description = "Output directory(ies) for Twirp generated code. If null, uses parent js.outputPath.";
+            example = "proto/gen/twirp";
           };
 
           options = mkOption {
@@ -1010,6 +1036,13 @@ with lib; {
             type = types.package;
             defaultText = literalExpression "pkgs.protoc-gen-ts_proto";
             description = "The ts-proto package to use";
+          };
+
+          outputPath = mkOption {
+            type = types.nullOr (types.either types.str (types.listOf types.str));
+            default = null;
+            description = "Output directory(ies) for ts-proto generated code. If null, uses parent js.outputPath.";
+            example = "src/generated/proto";
           };
 
           options = mkOption {

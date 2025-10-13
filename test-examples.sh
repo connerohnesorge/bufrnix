@@ -209,6 +209,11 @@ test_example "dart-example" \
 test_example "js-example" \
     "proto/gen/js/example/v1/example_pb.ts"
 
+# Test JavaScript ES custom outputPath example
+# This tests that plugin-specific outputPath (js.es.outputPath) works correctly
+test_example "js-es-custom-outputpath" \
+    "proto/gen/js/example/v1/example_pb.ts"
+
 # Test PHP Twirp example
 test_example "php-twirp" \
     "proto/gen/php/Example/V1/HelloRequest.php" \

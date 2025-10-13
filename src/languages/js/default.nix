@@ -11,12 +11,13 @@ with lib; let
   jsOptions = cfg.options;
 
   # Import JS-specific sub-modules
+  # Use plugin-specific outputPath if set, otherwise fall back to parent outputPath
   grpcWebModule = import ./grpc-web.nix {
     inherit pkgs lib;
     cfg =
       cfg.grpcWeb
       // {
-        outputPath = outputPath;
+        outputPath = cfg.grpcWeb.outputPath or outputPath;
       };
   };
 
@@ -25,7 +26,7 @@ with lib; let
     cfg =
       cfg.twirp
       // {
-        outputPath = outputPath;
+        outputPath = cfg.twirp.outputPath or outputPath;
       };
   };
 
@@ -47,7 +48,7 @@ with lib; let
     cfg =
       cfg.tsProto
       // {
-        outputPath = outputPath;
+        outputPath = cfg.tsProto.outputPath or outputPath;
       };
   };
 
@@ -78,13 +79,14 @@ in {
     (optional (cfg.package != null)
       "--js_out=import_style=commonjs,binary:${outputPath}")
     ++ (optionals cfg.es.enable (let
+      esOutputPath = cfg.es.outputPath or outputPath;
       esOptions =
         cfg.es.options
         ++ (optional (cfg.es.target != "") "target=${cfg.es.target}")
         ++ (optional (cfg.es.importExtension != "") "import_extension=${cfg.es.importExtension}");
     in [
       "--plugin=protoc-gen-es=${cfg.es.package}/bin/protoc-gen-es"
-      "--es_out=${outputPath}"
+      "--es_out=${esOutputPath}"
       (optionalString (esOptions != []) "--es_opt=${concatStringsSep "," esOptions}")
     ]))
     ++ (optionals cfg.tsProto.enable (tsProtoModule.protocPlugins or []))
@@ -95,6 +97,9 @@ in {
     ''
       # Create js-specific directories
       mkdir -p "${outputPath}"
+      ${optionalString cfg.es.enable ''
+        mkdir -p "${cfg.es.outputPath or outputPath}"
+      ''}
       ${optionalString (cfg.packageName != "") ''
         echo "Creating JS package: ${cfg.packageName}"
       ''}
@@ -117,8 +122,10 @@ in {
       ''}
 
       # Generate package.json for ES modules if requested
-      ${optionalString (cfg.es.enable && cfg.es.generatePackageJson) ''
-                cat > ${outputPath}/package.json <<EOF
+      ${optionalString (cfg.es.enable && cfg.es.generatePackageJson) (let
+        esOutputPath = cfg.es.outputPath or outputPath;
+      in ''
+                cat > ${esOutputPath}/package.json <<EOF
         {
           "name": "${
           if cfg.es.packageName != ""
