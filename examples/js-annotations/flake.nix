@@ -76,9 +76,7 @@
           echo "Key Features:"
           echo "  ✅ Google API annotations (google.api.http) for REST endpoints"
           echo "  ✅ Protobuf-ES for modern TypeScript message generation"
-          echo "  ✅ Connect-ES for type-safe RPC clients (gRPC + HTTP/REST)"
           echo "  ✅ Complete user management service example"
-          echo "  ✅ Both protocol interfaces from the same .proto files"
           echo ""
           echo "Available commands:"
           echo "  nix build              - Generate TypeScript code from proto files"
@@ -92,10 +90,6 @@
           echo "  ./gen/ts/              - All generated TypeScript files"
           echo "  ./gen/ts/google/       - Google API annotations as TypeScript"
           echo "  ./gen/ts/example/      - User service messages and clients"
-          echo ""
-          echo "The key advantage: Connect-ES generates clients that can talk to services"
-          echo "via both gRPC (for performance) and HTTP/REST (for web compatibility)"
-          echo "using the same TypeScript interfaces."
           echo ""
         '';
       };
