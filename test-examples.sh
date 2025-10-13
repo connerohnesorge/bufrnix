@@ -285,7 +285,7 @@ test_example "go-struct-transformer" \
     "gen/go/example/v1/product.pb.go" \
     "gen/go/example/v1/transform/product_transformer.go"
 
-# TODO: Fix JavaScript ES modules example (has Connect-ES plugin issues)
+# TODO: Fix JavaScript ES modules example (needs verification after Connect-ES integration)
 # test_example "js-es-modules" \
 #     "src/generated/product_pb.ts" \
 #     "src/generated/user_pb.ts"
