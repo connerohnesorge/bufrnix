@@ -1,0 +1,61 @@
+syntax = "proto3";
+
+package common.v1;
+
+// Common types used across multiple services
+
+// User roles in the system
+enum UserRole {
+  USER_ROLE_UNSPECIFIED = 0;
+  USER_ROLE_GUEST = 1;
+  USER_ROLE_USER = 2;
+  USER_ROLE_MODERATOR = 3;
+  USER_ROLE_ADMIN = 4;
+}
+
+// Status codes for operations
+enum Status {
+  STATUS_UNSPECIFIED = 0;
+  STATUS_SUCCESS = 1;
+  STATUS_PENDING = 2;
+  STATUS_FAILED = 3;
+  STATUS_CANCELLED = 4;
+}
+
+// Pagination metadata
+message PaginationInfo {
+  int32 page = 1;
+  int32 page_size = 2;
+  int32 total_pages = 3;
+  int32 total_items = 4;
+}
+
+// Error details
+message ErrorDetail {
+  string code = 1;
+  string message = 2;
+  string field = 3;
+}
+
+// Standard response wrapper
+message ResponseMetadata {
+  Status status = 1;
+  repeated ErrorDetail errors = 2;
+  PaginationInfo pagination = 3;
+}
+
+// Address information
+message Address {
+  string street = 1;
+  string city = 2;
+  string state = 3;
+  string postal_code = 4;
+  string country = 5;
+}
+
+// Contact information
+message ContactInfo {
+  string phone = 1;
+  string email = 2;
+  Address address = 3;
+}
