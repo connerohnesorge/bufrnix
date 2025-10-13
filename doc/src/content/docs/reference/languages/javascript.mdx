@@ -19,8 +19,7 @@ JavaScript/TypeScript support provides multiple output formats and RPC options f
 | Plugin                      | Description       | Generated Files        |
 | --------------------------- | ----------------- | ---------------------- |
 | **`protoc-gen-js`**         | CommonJS messages | `*_pb.js`, `*_pb.d.ts` |
-| **`protoc-gen-es`**         | ES modules        | `*.js`, `*.d.ts`       |
-| **`protoc-gen-connect-es`** | Connect-ES RPC    | `*_connect.js`         |
+| **`protoc-gen-es`**         | ES modules | `*.js`, `*.d.ts` |
 | **`protoc-gen-grpc-web`**   | gRPC-Web client   | `*_grpc_web_pb.js`     |
 | **`protoc-gen-twirp_js`**   | Twirp RPC         | `*_twirp.js`           |
 
@@ -54,15 +53,6 @@ languages.js = {
       "target=ts"              # Generate TypeScript
       "import_extension=.js"   # ES module extensions
       "json_types=true"        # JSON type definitions
-    ];
-  };
-
-  # Connect-ES for type-safe RPC
-  connect = {
-    enable = true;
-    options = [
-      "target=ts"
-      "import_extension=.js"
     ];
   };
 
@@ -113,9 +103,8 @@ languages = {
       "./proto/google/api/http.proto"      # REST definitions
     ];
     es.enable = true;
-    connect.enable = true;
   };
-  
+
   # Go: Use only internal services (excludes Google annotations)
   go = {
     enable = true;
@@ -147,7 +136,6 @@ languages.js = {
     # No internal services - client security boundary
   ];
   es.enable = true;
-  connect.enable = true;
 };
 ```
 
@@ -185,7 +173,7 @@ languages.js = {
 
 <CardGrid stagger>
   <Card title="Google API Annotations" icon="globe">
-    Add HTTP/REST annotations for Connect-ES clients
+    Add HTTP/REST annotations for web clients
   </Card>
   <Card title="Frontend Boundaries" icon="shield">
     Prevent frontend access to internal backend services
@@ -273,87 +261,6 @@ message StreamUsersRequest {
 ## Generated Code Usage
 
 <Tabs>
-  <TabItem label="Connect-ES (Recommended)">
-    ```typescript
-    import { UserService } from "./proto/example/v1/example_connect.js";
-    import { User, ActiveStatus } from "./proto/example/v1/example_pb.js";
-    import { createPromiseClient } from "@connectrpc/connect";
-    import { createConnectTransport } from "@connectrpc/connect-web";
-    
-    // Create transport
-    const transport = createConnectTransport({
-      baseUrl: "https://api.example.com",
-      credentials: "include",
-      interceptors: [
-        (next) => async (req) => {
-          console.log(`Calling ${req.method.name}`);
-          const res = await next(req);
-          console.log(`Response received`);
-          return res;
-        },
-      ],
-    });
-    
-    // Create typed client
-    const client = createPromiseClient(UserService, transport);
-    
-    async function main() {
-      try {
-        // Create a new user with typed data
-        const user = new User({
-          id: "1",
-          name: "John Doe",
-          email: "john@example.com",
-          age: 30,
-          tags: ["developer", "typescript"],
-          metadata: {
-            department: "Engineering",
-            location: "Remote"
-          },
-          status: {
-            case: "active",
-            value: new ActiveStatus({
-              since: "2024-01-01",
-              activity: "coding"
-            })
-          }
-        });
-    
-        const createResponse = await client.createUser({
-          user: user,
-        });
-    
-        console.log("Created user:", createResponse.user);
-    
-        // Get the user
-        const getResponse = await client.getUser({
-          id: "1",
-        });
-    
-        console.log("Retrieved user:", getResponse.user);
-    
-        // List users with pagination
-        const listResponse = await client.listUsers({
-          pageSize: 10,
-          pageToken: "",
-          tags: ["developer"],
-        });
-    
-        console.log(`Found ${listResponse.users.length} users`);
-        
-        // Stream users
-        for await (const user of client.streamUsers({ tags: ["active"] })) {
-          console.log("Streamed user:", user.name);
-        }
-      } catch (error) {
-        console.error("RPC failed:", error);
-      }
-    }
-    
-    main();
-    ```
-  </TabItem>
-
   <TabItem label="gRPC-Web">
     ```typescript
     import { UserServiceClient } from "./proto/example/v1/example_grpc_web_pb";
@@ -551,78 +458,6 @@ message StreamUsersRequest {
     useTwirp();
     ```
   </TabItem>
-
-  <TabItem label="Node.js Server">
-    ```typescript
-    import { createServer } from "@connectrpc/connect";
-    import { createNodeServer } from "@connectrpc/connect-node";
-    import { UserService } from "./proto/example/v1/example_connect";
-    import { User } from "./proto/example/v1/example_pb";
-    
-    // In-memory storage
-    const users = new Map<string, User>();
-    
-    // Implement service
-    const userService = {
-      async getUser(request) {
-        const user = users.get(request.id);
-        if (!user) {
-          throw new Error("User not found");
-        }
-        return { user };
-      },
-    
-      async createUser(request) {
-        users.set(request.user!.id, request.user!);
-        return { user: request.user! };
-      },
-    
-      async listUsers(request) {
-        const allUsers = Array.from(users.values());
-        
-        // Filter by tags
-        const filtered = request.tags.length > 0
-          ? allUsers.filter(u => 
-              u.tags.some(t => request.tags.includes(t))
-            )
-          : allUsers;
-        
-        // Pagination
-        const start = request.pageToken ? parseInt(request.pageToken) : 0;
-        const end = start + request.pageSize;
-        const page = filtered.slice(start, end);
-        
-        return {
-          users: page,
-          nextPageToken: end < filtered.length ? end.toString() : "",
-          totalCount: filtered.length
-        };
-      },
-    
-      async *streamUsers(request) {
-        for (const [_, user] of users) {
-          if (request.tags.length === 0 || 
-              user.tags.some(t => request.tags.includes(t))) {
-            yield user;
-            // Simulate real-time updates
-            await new Promise(resolve => setTimeout(resolve, 1000));
-          }
-        }
-      }
-    } satisfies typeof UserService;
-    
-    // Create and start server
-    const server = createNodeServer({
-      services: [
-        { service: UserService, implementation: userService }
-      ],
-      address: "localhost:8080",
-    });
-    
-    await server.start();
-    console.log("Server listening on", server.address);
-    ```
-  </TabItem>
 </Tabs>
 
 ## Build Tools Integration
@@ -658,8 +493,6 @@ message StreamUsersRequest {
     "test": "vitest"
   },
   "dependencies": {
-    "@connectrpc/connect": "^1.0.0",
-    "@connectrpc/connect-web": "^1.0.0",
     "@bufbuild/protobuf": "^1.0.0"
   },
   "devDependencies": {
@@ -680,8 +513,6 @@ message StreamUsersRequest {
 export default {
   optimizeDeps: {
     include: [
-      "@connectrpc/connect",
-      "@connectrpc/connect-web",
       "@bufbuild/protobuf",
     ],
   },
@@ -692,24 +523,17 @@ export default {
 
 ```tsx
 import { useEffect, useState } from "react";
-import { createPromiseClient } from "@connectrpc/connect";
-import { createConnectTransport } from "@connectrpc/connect-web";
-import { UserService } from "@/proto/example/v1/example_connect";
 import { User } from "@/proto/example/v1/example_pb";
 
-const transport = createConnectTransport({
-  baseUrl: import.meta.env.VITE_API_URL,
-});
-
-const client = createPromiseClient(UserService, transport);
-
+// Use your preferred RPC framework (gRPC-Web, Twirp, etc.)
+// This example shows the React component structure
 export function UserList() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    client
-      .listUsers({ pageSize: 20, pageToken: "" })
+    // Fetch users using your RPC client
+    fetchUsers()
       .then((response) => {
         setUsers(response.users);
         setLoading(false);
@@ -736,14 +560,13 @@ export function UserList() {
 
 ## Best Practices
 
-1. **Use Connect-ES**: Preferred for new projects - type-safe, modern API
-2. **Enable TypeScript**: Use `target=ts` for better type safety
-3. **ES Modules**: Use `.js` extensions for proper ES module support
-4. **Error Handling**: Use proper error types from Connect/gRPC
-5. **Streaming**: Use async iterators for efficient streaming
-6. **Tree Shaking**: ES modules enable better bundle optimization
-7. **Smart File Management**: Use `additionalFiles` to include Google API annotations for REST clients
-8. **Security Boundaries**: Use per-language files to prevent frontend access to internal backend services
+1. **Enable TypeScript**: Use `target=ts` for better type safety
+2. **ES Modules**: Use `.js` extensions for proper ES module support
+3. **Error Handling**: Use proper error types from your RPC framework
+4. **Streaming**: Use async iterators for efficient streaming
+5. **Tree Shaking**: ES modules enable better bundle optimization
+6. **Smart File Management**: Use `additionalFiles` to include Google API annotations for REST clients
+7. **Security Boundaries**: Use per-language files to prevent frontend access to internal backend services
 
 ## Try the Example
 
@@ -771,18 +594,7 @@ import { User } from "./proto/example_pb";
 
 ### CORS Issues
 
-For browser clients, configure server CORS:
-
-```typescript
-const transport = createConnectTransport({
-  baseUrl: "https://api.example.com",
-  credentials: "include", // For cookies
-  // OR
-  headers: {
-    Authorization: "Bearer token",
-  },
-});
-```
+For browser clients, configure appropriate CORS settings on your server and include authentication headers as needed by your RPC framework (gRPC-Web, Twirp, etc.).
 
 ### TypeScript Paths
 

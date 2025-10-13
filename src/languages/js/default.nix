@@ -41,16 +41,6 @@ with lib; let
       };
   };
 
-  # Connect-ES for modern RPC support
-  connectModule = import ./connect.nix {
-    inherit pkgs lib;
-    cfg =
-      cfg.connect
-      // {
-        outputPath = outputPath;
-      };
-  };
-
   # ts-proto for TypeScript-first development
   tsProtoModule = import ./ts-proto.nix {
     inherit pkgs lib;
@@ -67,7 +57,6 @@ with lib; let
       grpcWebModule
       twirpModule
       protovalidateModule
-      connectModule
       tsProtoModule
     ]);
 in {
@@ -92,8 +81,7 @@ in {
       esOptions =
         cfg.es.options
         ++ (optional (cfg.es.target != "") "target=${cfg.es.target}")
-        ++ (optional (cfg.es.importExtension != "") "import_extension=${cfg.es.importExtension}")
-        ++ (optional cfg.connect.enable "plugin=@connectrpc/protoc-gen-connect-es");
+        ++ (optional (cfg.es.importExtension != "") "import_extension=${cfg.es.importExtension}");
     in [
       "--plugin=protoc-gen-es=${cfg.es.package}/bin/protoc-gen-es"
       "--es_out=${outputPath}"
@@ -166,7 +154,6 @@ in {
       grpcWebModule
       twirpModule
       protovalidateModule
-      connectModule
       tsProtoModule
     ]);
 }

@@ -36,12 +36,6 @@
                 packageName = "@example/proto";
                 importExtension = ".js"; # For Node.js ES modules compatibility
               };
-              # Connect-ES for modern RPC
-              connect = {
-                enable = true;
-                generatePackageJson = true;
-                packageName = "@example/connect";
-              };
               # TypeScript validation support
               protovalidate = {
                 enable = true;
@@ -75,7 +69,6 @@
           echo ""
           echo "Features enabled:"
           echo "  ✅ Protobuf-ES (default TypeScript generator)"
-          echo "  ✅ Connect-ES (modern RPC framework)"
           echo "  ✅ Protovalidate-ES (validation support)"
         '';
       };
