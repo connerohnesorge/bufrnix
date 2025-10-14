@@ -53,6 +53,26 @@ with lib; {
       };
     };
 
+    # Post-generation hooks configuration
+    hooks = {
+      postGeneration = mkOption {
+        type = types.str;
+        default = "";
+        description = "Bash commands to run after all code generation completes";
+        example = ''
+          echo "All generation completed!"
+          find . -name "*.pb.go" -exec gofmt -w {} +
+          cd gen/go && go mod tidy
+        '';
+      };
+
+      onFailure = mkOption {
+        type = types.enum ["continue" "stop"];
+        default = "continue";
+        description = "What to do if any hook fails (continue or stop execution)";
+      };
+    };
+
     # protoc options
     protoc = {
       sourceDirectories = mkOption {

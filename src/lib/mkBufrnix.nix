@@ -387,5 +387,22 @@ in
         generateProtocCommands}
 
       ${debug.log 1 "Multiple output path code generation completed successfully" cfg}
+
+      # Execute post-generation hooks if configured
+      ${optionalString (cfg.hooks.postGeneration != "") ''
+        ${debug.log 1 "Executing post-generation hooks..." cfg}
+
+        # Set environment variables for hooks
+        export BUFRNIX_ROOT="${cfg.root}"
+        export BUFRNIX_ENABLED_LANGUAGES="${concatStringsSep " " (filter (lang: cfg.languages.${lang}.enable) languageNames)}"
+        export BUFRNIX_DEBUG_ENABLE="${if cfg.debug.enable then "true" else "false"}"
+        export BUFRNIX_DEBUG_VERBOSITY="${toString cfg.debug.verbosity}"
+
+        # Execute post-generation hooks
+        echo "🚀 Running post-generation hooks..."
+        ${cfg.hooks.postGeneration}
+        echo "✅ Post-generation hooks completed successfully"
+        ${debug.log 1 "Post-generation hooks completed successfully" cfg}
+      ''}
     '';
   }
