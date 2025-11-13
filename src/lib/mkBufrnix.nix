@@ -319,7 +319,6 @@ in
         # Find nanopb options files and add them to protoc_args
         options_file=$(find . -name "*.options" -type f 2>/dev/null | head -1)
         if [ -n "$options_file" ]; then
-          echo "Found nanopb options file: $options_file"
           nanopb_opts="--nanopb_opt=-f$options_file"
         fi
       ''}
@@ -328,8 +327,6 @@ in
       ${concatMapStrings (
           langCmd:
             concatMapStrings (pathCmd: ''
-              echo "Generating ${langCmd.language} code for output path: ${pathCmd.outputPath}"
-
               # Compute proto files for this specific language
               lang_proto_files=""
               ${
@@ -359,8 +356,6 @@ in
                     lang_proto_files="${concatStringsSep " " languageFiles}"
                   ''
               }
-
-              echo "Proto files for ${langCmd.language}: $lang_proto_files"
 
               # Run initialization hooks for this path
               ${pathCmd.initHooks}
