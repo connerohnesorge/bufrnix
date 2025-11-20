@@ -7,7 +7,7 @@
 }:
 with lib; let
   # Define output path and options
-  outputPath = cfg.outputPath;
+  inherit (cfg) outputPath;
   jsOptions = cfg.options;
 
   # Import JS-specific sub-modules
@@ -17,7 +17,10 @@ with lib; let
     cfg =
       cfg.grpcWeb
       // {
-        outputPath = if (cfg.grpcWeb.outputPath or null) != null then cfg.grpcWeb.outputPath else outputPath;
+        outputPath =
+          if (cfg.grpcWeb.outputPath or null) != null
+          then cfg.grpcWeb.outputPath
+          else outputPath;
       };
   };
 
@@ -26,7 +29,10 @@ with lib; let
     cfg =
       cfg.twirp
       // {
-        outputPath = if (cfg.twirp.outputPath or null) != null then cfg.twirp.outputPath else outputPath;
+        outputPath =
+          if (cfg.twirp.outputPath or null) != null
+          then cfg.twirp.outputPath
+          else outputPath;
       };
   };
 
@@ -38,7 +44,7 @@ with lib; let
     cfg =
       cfg.protovalidate
       // {
-        outputPath = outputPath;
+        inherit outputPath;
       };
   };
 
@@ -48,7 +54,10 @@ with lib; let
     cfg =
       cfg.tsProto
       // {
-        outputPath = if (cfg.tsProto.outputPath or null) != null then cfg.tsProto.outputPath else outputPath;
+        outputPath =
+          if (cfg.tsProto.outputPath or null) != null
+          then cfg.tsProto.outputPath
+          else outputPath;
       };
   };
 
@@ -79,7 +88,10 @@ in {
     (optional (cfg.package != null)
       "--js_out=import_style=commonjs,binary:${outputPath}")
     ++ (optionals cfg.es.enable (let
-      esOutputPath = if (cfg.es.outputPath != null) then cfg.es.outputPath else outputPath;
+      esOutputPath =
+        if (cfg.es.outputPath != null)
+        then cfg.es.outputPath
+        else outputPath;
       esOptions =
         cfg.es.options
         ++ (optional (cfg.es.target != "") "target=${cfg.es.target}")
@@ -95,7 +107,10 @@ in {
   # Initialization hook for JS
   initHooks =
     (let
-      esOutputPath = if (cfg.es.outputPath != null) then cfg.es.outputPath else outputPath;
+      esOutputPath =
+        if (cfg.es.outputPath != null)
+        then cfg.es.outputPath
+        else outputPath;
     in ''
       # Create js-specific directories
       mkdir -p "${outputPath}"
@@ -125,7 +140,10 @@ in {
 
       # Generate package.json for ES modules if requested
       ${optionalString (cfg.es.enable && cfg.es.generatePackageJson) (let
-        esOutputPath = if (cfg.es.outputPath != null) then cfg.es.outputPath else outputPath;
+        esOutputPath =
+          if (cfg.es.outputPath != null)
+          then cfg.es.outputPath
+          else outputPath;
       in ''
                 cat > ${esOutputPath}/package.json <<EOF
         {

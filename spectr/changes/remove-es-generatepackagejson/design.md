@@ -1,0 +1,258 @@
+# Design Document: Remove generatePackageJson Feature
+
+## Overview
+
+This document outlines the architectural reasoning for completely removing the `generatePackageJson` feature from Bufrnix's JavaScript/TypeScript language modules.
+
+## Current Architecture
+
+### Package.json Generation Locations
+
+**1. ES Modules (default.nix)**
+```nix
+${optionalString (cfg.es.enable && cfg.es.generatePackageJson) (let
+  esOutputPath = ...
+in ''
+  cat > ${esOutputPath}/package.json <<EOF
+  { ... }
+  EOF
+'')}
+```
+
+**2. ts-proto (ts-proto.nix)**
+```nix
+${optionalString (cfg.generatePackageJson or false) ''
+  cat > ${outputPath}/package.json <<EOF
+  { ... }
+  EOF
+''}
+```
+
+**Issues with current approach:**
+- Template strings duplicate package.json logic
+- Versions are hard-coded and become stale
+- No lifecycle management (updates, patches)
+- Opinionated defaults not suitable for all projects
+- Couples code generation with package management
+
+## Proposed Changes
+
+### 1. Configuration Schema Simplification
+
+**Remove from `bufrnix-options.nix`:**
+```nix
+# REMOVE: generatePackageJson, packageName for all JS sub-modules
+js.es.generatePackageJson
+js.es.packageName
+js.connect.generatePackageJson
+js.connect.packageName
+js.tsProto.generatePackageJson
+js.tsProto.packageName
+```
+
+**Rationale:**
+- These options have no effect after code generation completes
+- Users should manage package.json as part of their project structure
+- Removes special-case handling from config validation
+
+### 2. Implementation Cleanup
+
+#### default.nix (ES Modules)
+```nix
+# BEFORE:
+generateHooks = ''
+  ...
+  ${optionalString (cfg.es.enable && cfg.es.generatePackageJson) ''
+    cat > ${esOutputPath}/package.json <<EOF
+    {...}
+    EOF
+  ''}
+  ...
+''
+
+# AFTER:
+generateHooks = ''
+  # Code generation complete
+  # Users should manage package.json in their project
+  echo "ES modules generated to ${esOutputPath}"
+''
+```
+
+#### ts-proto.nix
+```nix
+# REMOVE entire block:
+${optionalString (cfg.generatePackageJson or false) ''
+  cat > ${outputPath}/package.json <<EOF
+  {...}
+  EOF
+''}
+```
+
+### 3. Example Projects Update
+
+**js-es-modules/flake.nix**
+```nix
+# BEFORE:
+es = {
+  enable = true;
+  target = "ts";
+  generatePackageJson = true;      # REMOVE
+  packageName = "@example/proto";  # REMOVE
+  importExtension = ".js";
+};
+
+# AFTER:
+es = {
+  enable = true;
+  target = "ts";
+  importExtension = ".js";
+};
+
+# Project must include package.json in repo:
+# examples/js-es-modules/package.json
+```
+
+**ts-flake-parts/flake.nix**
+```nix
+# BEFORE:
+es = {
+  enable = true;
+  target = "ts";
+  generatePackageJson = true;        # REMOVE
+  packageName = "@example/proto-ts"; # REMOVE
+  importExtension = ".js";
+};
+
+# AFTER:
+es = {
+  enable = true;
+  target = "ts";
+  importExtension = ".js";
+};
+
+# Project must include package.json in repo
+```
+
+### 4. Documentation Changes
+
+#### Reference Documentation
+**Remove from configuration.mdx and languages.mdx:**
+- All examples showing `generatePackageJson = true`
+- All mentions of `packageName` configuration
+- All template examples from package.json generation
+
+#### Add Migration Guide
+Create `doc/src/content/docs/guides/migrating-from-generatepackagejson.mdx`:
+
+```markdown
+# Migrating from generatePackageJson
+
+## What Changed
+The `generatePackageJson` feature has been removed from Bufrnix.
+
+## Why
+- Bufrnix focuses on protobuf code generation
+- Package management is better left to individual projects
+- Users have more control over dependencies and versioning
+
+## Migration Steps
+
+### Step 1: Remove Configuration
+```nix
+# Remove these lines:
+generatePackageJson = true;
+packageName = "@myorg/proto";
+```
+
+### Step 2: Create package.json
+Create `package.json` in your project:
+
+#### For Protobuf-ES
+```json
+{
+  "name": "@myorg/proto",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./index.js",
+      "types": "./index.d.ts"
+    }
+  },
+  "dependencies": {
+    "@bufbuild/protobuf": "^1.10.0"
+  }
+}
+```
+
+#### For ts-proto
+```json
+{
+  "name": "generated-ts-proto",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@grpc/grpc-js": "^1.10.0",
+    "nice-grpc": "^2.1.7"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.0"
+  }
+}
+```
+```
+
+## Dependency Chain
+
+1. **Configuration schema removal** must happen first
+2. **Code generation cleanup** depends on schema removal
+3. **Example projects** can be updated independently
+4. **Documentation** should be last (explains the changes)
+
+## Testing Strategy
+
+### Unit Tests
+- Remove option validation tests for generatePackageJson
+- Remove option validation tests for packageName
+- Verify configuration accepts configs without these options
+
+### Integration Tests
+- Run examples without generatePackageJson options
+- Verify generated .proto.d.ts and .proto.js files are created
+- Verify no package.json files are generated by Bufrnix
+
+### Example Validation
+- js-es-modules example runs successfully
+- ts-flake-parts example builds successfully
+- Both examples require users to manage package.json
+
+## Backwards Compatibility
+
+**Not applicable** - this is a hard breaking change.
+
+### Communication Plan
+1. **Breaking change notice** in release notes
+2. **Migration guide** in documentation
+3. **Example updates** show new pattern
+4. **Deprecation period** - None (hard break)
+
+## Performance Impact
+
+**Positive:**
+- Slightly faster code generation (removed hook execution)
+- Smaller generated output (no package.json files)
+- Simpler Nix evaluation (fewer conditionals)
+
+## Future Considerations
+
+If package management is needed in future:
+1. Create separate `bufrnix-package-mgmt` library
+2. Allow external tools to extend Bufrnix (plugins)
+3. Keep core focused on protobuf generation
+
+This ensures Bufrnix remains maintainable and focused.

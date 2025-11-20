@@ -6,7 +6,7 @@
   ...
 }:
 with lib; let
-  outputPath = cfg.outputPath;
+  inherit (cfg) outputPath;
 
   # Import C-specific sub-modules
   protobufCModule = import ./protobuf-c.nix {
