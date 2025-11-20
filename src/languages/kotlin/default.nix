@@ -7,8 +7,8 @@
 }:
 with lib; let
   # Define output paths
-  javaOutputPath = cfg.javaOutputPath;
-  kotlinOutputPath = cfg.kotlinOutputPath;
+  inherit (cfg) javaOutputPath;
+  inherit (cfg) kotlinOutputPath;
   kotlinOptions = cfg.options;
 
   # Import Kotlin-specific sub-modules
@@ -17,9 +17,9 @@ with lib; let
     cfg =
       (cfg.grpc or {enable = false;})
       // {
-        javaOutputPath = javaOutputPath;
-        kotlinOutputPath = kotlinOutputPath;
-        jdk = cfg.jdk;
+        inherit javaOutputPath;
+        inherit kotlinOutputPath;
+        inherit (cfg) jdk;
         grpcKotlinJar = cfg.grpc.grpcKotlinJar or null;
         grpcKotlinVersion = cfg.grpc.grpcKotlinVersion or "1.4.2";
         grpcJavaJar = cfg.grpc.grpcJavaJar or null;
@@ -32,9 +32,9 @@ with lib; let
     cfg =
       (cfg.connect or {enable = false;})
       // {
-        javaOutputPath = javaOutputPath;
-        kotlinOutputPath = kotlinOutputPath;
-        jdk = cfg.jdk;
+        inherit javaOutputPath;
+        inherit kotlinOutputPath;
+        inherit (cfg) jdk;
         connectKotlinJar = cfg.connect.connectKotlinJar or null;
         connectVersion = cfg.connect.connectVersion or "0.7.3";
       };

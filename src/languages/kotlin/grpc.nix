@@ -7,8 +7,8 @@
 with lib; let
   # Define gRPC-specific options
   grpcOptions = cfg.options or [];
-  javaOutputPath = cfg.javaOutputPath;
-  kotlinOutputPath = cfg.kotlinOutputPath;
+  inherit (cfg) javaOutputPath;
+  inherit (cfg) kotlinOutputPath;
 
   # Create wrapper script for grpc-kotlin plugin
   grpcKotlinPlugin =
@@ -38,8 +38,8 @@ with lib; let
         version = "${cfg.grpcVersion}-bufrnix4";
 
         src = let
-          isDarwin = pkgs.stdenv.isDarwin;
-          isAarch64 = pkgs.stdenv.hostPlatform.isAarch64;
+          inherit (pkgs.stdenv) isDarwin;
+          inherit (pkgs.stdenv.hostPlatform) isAarch64;
           platform =
             if isDarwin && isAarch64
             then "osx-aarch_64"
