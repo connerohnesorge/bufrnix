@@ -85,53 +85,11 @@ with lib;
       # ts-proto specific generation steps
       echo "Generated ts-proto TypeScript interfaces to ${outputPath}"
 
-      # Generate tsconfig.json if needed
-      ${optionalString (cfg.generateTsConfig or false) ''
-              cat > ${outputPath}/tsconfig.json <<EOF
-        {
-          "compilerOptions": {
-            "target": "ES2020",
-            "module": "ESNext",
-            "moduleResolution": "node",
-            "strict": true,
-            "esModuleInterop": true,
-            "skipLibCheck": true,
-            "forceConsistentCasingInFileNames": true,
-            "declaration": true,
-            "declarationMap": true,
-            "sourceMap": true,
-            "outDir": "./dist"
-          },
-          "include": ["./**/*.ts"],
-          "exclude": ["node_modules", "dist"]
-        }
-        EOF
-      ''}
-
-      # Generate package.json if needed
-      ${optionalString (cfg.generatePackageJson or false) ''
-              cat > ${outputPath}/package.json <<EOF
-        {
-          "name": "${cfg.packageName or "generated-ts-proto"}",
-          "version": "1.0.0",
-          "type": "module",
-          "main": "./dist/index.js",
-          "types": "./dist/index.d.ts",
-          "scripts": {
-            "build": "tsc",
-            "clean": "rm -rf dist"
-          },
-          "dependencies": {
-            "@grpc/grpc-js": "^1.10.0",
-            "nice-grpc": "^2.1.7",
-            "nice-grpc-common": "^2.0.2"
-          },
-          "devDependencies": {
-            "typescript": "^5.3.0"
-          }
-        }
-        EOF
-      ''}
+      # Note: package.json should be managed by the project itself
+      # Users should create their own package.json with appropriate dependencies:
+      # - @grpc/grpc-js (for gRPC support)
+      # - nice-grpc and nice-grpc-common (if using nice-grpc service output)
+      # - typescript (for compilation)
     '';
   }
   else {}
