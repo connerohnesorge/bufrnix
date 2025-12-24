@@ -9,6 +9,7 @@ This document outlines the architectural reasoning for completely removing the `
 ### Package.json Generation Locations
 
 **1. ES Modules (default.nix)**
+
 ```nix
 ${optionalString (cfg.es.enable && cfg.es.generatePackageJson) (let
   esOutputPath = ...
@@ -20,6 +21,7 @@ in ''
 ```
 
 **2. ts-proto (ts-proto.nix)**
+
 ```nix
 ${optionalString (cfg.generatePackageJson or false) ''
   cat > ${outputPath}/package.json <<EOF
@@ -29,6 +31,7 @@ ${optionalString (cfg.generatePackageJson or false) ''
 ```
 
 **Issues with current approach:**
+
 - Template strings duplicate package.json logic
 - Versions are hard-coded and become stale
 - No lifecycle management (updates, patches)
@@ -40,6 +43,7 @@ ${optionalString (cfg.generatePackageJson or false) ''
 ### 1. Configuration Schema Simplification
 
 **Remove from `bufrnix-options.nix`:**
+
 ```nix
 # REMOVE: generatePackageJson, packageName for all JS sub-modules
 js.es.generatePackageJson
@@ -51,6 +55,7 @@ js.tsProto.packageName
 ```
 
 **Rationale:**
+
 - These options have no effect after code generation completes
 - Users should manage package.json as part of their project structure
 - Removes special-case handling from config validation
@@ -58,6 +63,7 @@ js.tsProto.packageName
 ### 2. Implementation Cleanup
 
 #### default.nix (ES Modules)
+
 ```nix
 # BEFORE:
 generateHooks = ''
@@ -79,6 +85,7 @@ generateHooks = ''
 ```
 
 #### ts-proto.nix
+
 ```nix
 # REMOVE entire block:
 ${optionalString (cfg.generatePackageJson or false) ''
@@ -91,6 +98,7 @@ ${optionalString (cfg.generatePackageJson or false) ''
 ### 3. Example Projects Update
 
 **js-es-modules/flake.nix**
+
 ```nix
 # BEFORE:
 es = {
@@ -113,6 +121,7 @@ es = {
 ```
 
 **ts-flake-parts/flake.nix**
+
 ```nix
 # BEFORE:
 es = {
@@ -136,21 +145,26 @@ es = {
 ### 4. Documentation Changes
 
 #### Reference Documentation
+
 **Remove from configuration.mdx and languages.mdx:**
+
 - All examples showing `generatePackageJson = true`
 - All mentions of `packageName` configuration
 - All template examples from package.json generation
 
 #### Add Migration Guide
+
 Create `doc/src/content/docs/guides/migrating-from-generatepackagejson.mdx`:
 
-```markdown
+````markdown
 # Migrating from generatePackageJson
 
 ## What Changed
+
 The `generatePackageJson` feature has been removed from Bufrnix.
 
 ## Why
+
 - Bufrnix focuses on protobuf code generation
 - Package management is better left to individual projects
 - Users have more control over dependencies and versioning
@@ -158,16 +172,20 @@ The `generatePackageJson` feature has been removed from Bufrnix.
 ## Migration Steps
 
 ### Step 1: Remove Configuration
+
 ```nix
 # Remove these lines:
 generatePackageJson = true;
 packageName = "@myorg/proto";
 ```
+````
 
 ### Step 2: Create package.json
+
 Create `package.json` in your project:
 
 #### For Protobuf-ES
+
 ```json
 {
   "name": "@myorg/proto",
@@ -188,6 +206,7 @@ Create `package.json` in your project:
 ```
 
 #### For ts-proto
+
 ```json
 {
   "name": "generated-ts-proto",
@@ -205,6 +224,7 @@ Create `package.json` in your project:
   }
 }
 ```
+
 ```
 
 ## Dependency Chain
@@ -256,3 +276,4 @@ If package management is needed in future:
 3. Keep core focused on protobuf generation
 
 This ensures Bufrnix remains maintainable and focused.
+```

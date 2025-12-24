@@ -19,6 +19,7 @@ The `generatePackageJson` feature in JavaScript/TypeScript language modules crea
 5. **Single responsibility** - Users already manage package.json in their projects; Bufrnix should stay focused
 
 By removing this feature, we:
+
 - Reduce maintenance burden
 - Simplify the codebase
 - Give users full control over package management
@@ -27,6 +28,7 @@ By removing this feature, we:
 ## What Changes
 
 Fully remove the `generatePackageJson` configuration option and related code from:
+
 - Configuration schema (`bufrnix-options.nix`)
 - Language implementations (ES modules, ts-proto, Connect)
 - Example projects
@@ -35,6 +37,7 @@ Fully remove the `generatePackageJson` configuration option and related code fro
 ## Impact
 
 **Breaking Change**: Users using `generatePackageJson = true` will need to:
+
 1. Remove the configuration option
 2. Create their own package.json files
 3. Update example references if applicable
@@ -54,6 +57,7 @@ The `js.es.generatePackageJson` feature (and similar options in `ts-proto` and `
 ### Current Usage
 
 The feature is currently used in:
+
 - `js.es.generatePackageJson` (ES modules via protoc-gen-es)
 - `js.connect.generatePackageJson` (Connect protocol)
 - `js.tsProto.generatePackageJson` (ts-proto TypeScript generation)
@@ -63,6 +67,7 @@ The feature is currently used in:
 **Fully remove** the `generatePackageJson` feature and related configuration options from:
 
 1. **Configuration Schema** (`src/lib/bufrnix-options.nix`)
+
    - Remove `js.es.generatePackageJson` option
    - Remove `js.es.packageName` option
    - Remove `js.connect.generatePackageJson` option
@@ -71,18 +76,22 @@ The feature is currently used in:
    - Remove `js.tsProto.packageName` option
 
 2. **Language Module Implementation** (`src/languages/js/default.nix`)
+
    - Remove ES modules package.json generation logic
    - Simplify generateHooks (remove package.json creation)
 
 3. **ts-proto Module** (`src/languages/js/ts-proto.nix`)
+
    - Remove ts-proto package.json generation logic
    - Remove packageName configuration
 
 4. **connect Module** (`src/languages/js/connect.nix`)
+
    - Remove connect package.json generation logic
    - Remove packageName configuration
 
 5. **Example Projects**
+
    - Update `examples/js-es-modules/flake.nix` - remove generatePackageJson and packageName
    - Update `examples/ts-flake-parts/flake.nix` - remove generatePackageJson and packageName
    - Add migration guidance in README files
@@ -97,6 +106,7 @@ The feature is currently used in:
 ## Rationale
 
 **Why remove this feature?**
+
 1. **Scope creep prevention** - Bufrnix should focus on protobuf generation, not package management
 2. **Flexibility** - Users have total control over their package.json structure and dependencies
 3. **Maintenance reduction** - Less code to maintain, fewer template strings to keep current
@@ -106,17 +116,21 @@ The feature is currently used in:
 ## Impact Analysis
 
 ### Breaking Change
+
 This is a **hard breaking change**. Users currently using these options will need to:
+
 1. Remove configuration from their Nix configs
 2. Create/maintain their own `package.json` files
 3. Update example code if they use the provided examples
 
 ### Migration Path
+
 - Clear documentation showing before/after configuration
 - Example package.json templates for common scenarios
 - Gradual deprecation not needed - remove in one release with clear messaging
 
 ### Affected Users
+
 - Projects using `js.es` with `generatePackageJson = true`
 - Projects using `js.tsProto` with `generatePackageJson = true`
 - Projects using `js.connect` with `generatePackageJson = true`

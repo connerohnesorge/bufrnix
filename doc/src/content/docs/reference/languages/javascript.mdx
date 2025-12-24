@@ -3,7 +3,13 @@ title: JavaScript/TypeScript Language Support
 description: Modern Protocol Buffer support for JavaScript and TypeScript with ES modules, Connect-ES, gRPC-Web, and Twirp.
 ---
 
-import { Tabs, TabItem, Badge, CardGrid, Card } from "@astrojs/starlight/components";
+import {
+  Tabs,
+  TabItem,
+  Badge,
+  CardGrid,
+  Card,
+} from "@astrojs/starlight/components";
 import { Code } from "astro:components";
 import basicConfig from "./javascript.x-basic-configuration.nix?raw";
 
@@ -16,12 +22,12 @@ JavaScript/TypeScript support provides multiple output formats and RPC options f
 
 ## Available Plugins
 
-| Plugin                      | Description       | Generated Files        |
-| --------------------------- | ----------------- | ---------------------- |
-| **`protoc-gen-js`**         | CommonJS messages | `*_pb.js`, `*_pb.d.ts` |
-| **`protoc-gen-es`**         | ES modules | `*.js`, `*.d.ts` |
-| **`protoc-gen-grpc-web`**   | gRPC-Web client   | `*_grpc_web_pb.js`     |
-| **`protoc-gen-twirp_js`**   | Twirp RPC         | `*_twirp.js`           |
+| Plugin                    | Description       | Generated Files        |
+| ------------------------- | ----------------- | ---------------------- |
+| **`protoc-gen-js`**       | CommonJS messages | `*_pb.js`, `*_pb.d.ts` |
+| **`protoc-gen-es`**       | ES modules        | `*.js`, `*.d.ts`       |
+| **`protoc-gen-grpc-web`** | gRPC-Web client   | `*_grpc_web_pb.js`     |
+| **`protoc-gen-twirp_js`** | Twirp RPC         | `*_twirp.js`           |
 
 ## Configuration
 
@@ -40,7 +46,6 @@ languages.js = {
 languages.js = {
   enable = true;
   outputPath = "src/proto";
-  packageName = "@myorg/proto";
   options = [
     "import_style=commonjs"
     "binary"
@@ -72,6 +77,9 @@ languages.js = {
     options = ["lang=typescript"];
   };
 };
+
+# Note: Bufrnix no longer generates package.json files. You should manage your
+# package.json manually in your project.
 ```
 
 ## Per-Language Files
@@ -164,10 +172,10 @@ languages.js = {
 
 ### Configuration Options
 
-| Option | Type | Description | Example |
-|--------|------|-------------|---------|
-| `files` | `list` | Override global files completely | Web client APIs only |
-| `additionalFiles` | `list` | Extend global files | Add Google annotations |
+| Option            | Type   | Description                      | Example                |
+| ----------------- | ------ | -------------------------------- | ---------------------- |
+| `files`           | `list` | Override global files completely | Web client APIs only   |
+| `additionalFiles` | `list` | Extend global files              | Add Google annotations |
 
 ### Common JavaScript Use Cases
 
@@ -512,9 +520,7 @@ message StreamUsersRequest {
 // vite.config.ts
 export default {
   optimizeDeps: {
-    include: [
-      "@bufbuild/protobuf",
-    ],
+    include: ["@bufbuild/protobuf"],
   },
 };
 ```

@@ -41,8 +41,6 @@
                 es = {
                   enable = true;
                   target = "ts";
-                  generatePackageJson = true;
-                  packageName = "@example/proto-ts";
                   importExtension = ".js";
                 };
                 # TypeScript validation support (disabled for now)

@@ -1,0 +1,254 @@
+---
+title: Migrating from generatePackageJson
+description: Guide for migrating away from the deprecated generatePackageJson feature
+---
+
+# Migrating from generatePackageJson
+
+The `generatePackageJson` feature has been removed from Bufrnix as of this release. This guide will help you migrate your projects to manage package.json files manually.
+
+## What Changed
+
+Previously, Bufrnix offered the following configuration options for JavaScript/TypeScript language modules:
+
+- `js.es.generatePackageJson` - Automatically generate package.json for ES modules
+- `js.es.packageName` - Package name for generated package.json
+- `js.connect.generatePackageJson` - Automatically generate package.json for Connect
+- `js.connect.packageName` - Package name for Connect
+- `js.tsProto.generatePackageJson` - Automatically generate package.json for ts-proto
+- `js.tsProto.packageName` - Package name for ts-proto
+
+**These options have been completely removed.**
+
+## Why This Change?
+
+The `generatePackageJson` feature was removed for several important reasons:
+
+1. **Focus on Core Responsibility** - Bufrnix should focus exclusively on Protocol Buffer code generation, not package management
+2. **Better User Control** - Users have complete control over their package.json structure, dependencies, and versioning
+3. **Reduced Maintenance** - Eliminates the need to maintain hard-coded dependency versions in templates
+4. **Standard Practice** - Most modern build tools and package managers expect projects to maintain their own package.json
+
+## Migration Steps
+
+### Step 1: Remove Configuration Options
+
+Remove the deprecated configuration options from your `flake.nix`:
+
+```diff
+ languages = {
+   js = {
+     enable = true;
+     es = {
+       enable = true;
+       target = "ts";
+-      generatePackageJson = true;
+-      packageName = "@myorg/proto";
+       importExtension = ".js";
+     };
+   };
+ };
+```
+
+### Step 2: Create Your Own package.json
+
+Create a `package.json` file in your project root with the appropriate dependencies for your use case.
+
+#### For Protobuf-ES (ES Modules)
+
+```json
+{
+  "name": "@myorg/proto",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./index.js",
+      "types": "./index.d.ts"
+    }
+  },
+  "dependencies": {
+    "@bufbuild/protobuf": "^1.10.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.0"
+  }
+}
+```
+
+#### For Connect-ES
+
+```json
+{
+  "name": "@myorg/proto-connect",
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {
+    "@bufbuild/protobuf": "^1.10.0",
+    "@connectrpc/connect": "^1.4.0",
+    "@connectrpc/connect-node": "^1.4.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.0"
+  }
+}
+```
+
+#### For ts-proto
+
+```json
+{
+  "name": "generated-ts-proto",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@grpc/grpc-js": "^1.10.0",
+    "nice-grpc": "^2.1.7"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.0"
+  }
+}
+```
+
+### Step 3: Install Dependencies
+
+After creating your package.json, install dependencies:
+
+```bash
+npm install
+# or
+yarn install
+# or
+pnpm install
+```
+
+### Step 4: Update Build Process
+
+Your build process remains the same:
+
+1. Generate protobuf code with `nix build`
+2. Install dependencies with your package manager
+3. Build/compile as needed
+
+## Example Migration
+
+### Before (Old Configuration)
+
+```nix
+{
+  config = {
+    languages = {
+      js = {
+        enable = true;
+        es = {
+          enable = true;
+          target = "ts";
+          generatePackageJson = true;
+          packageName = "@example/proto-es";
+          importExtension = ".js";
+        };
+        connect = {
+          enable = true;
+          generatePackageJson = true;
+          packageName = "@example/proto-connect";
+        };
+        tsProto = {
+          enable = true;
+          generatePackageJson = true;
+        };
+      };
+    };
+  };
+}
+```
+
+### After (New Configuration)
+
+**flake.nix:**
+
+```nix
+{
+  config = {
+    languages = {
+      js = {
+        enable = true;
+        es = {
+          enable = true;
+          target = "ts";
+          importExtension = ".js";
+        };
+        connect.enable = true;
+        protovalidate.enable = true;
+      };
+    };
+  };
+}
+```
+
+**package.json:**
+
+```json
+{
+  "name": "@example/proto",
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {
+    "@bufbuild/protobuf": "^1.10.0",
+    "@bufbuild/protovalidate": "^0.2.0",
+    "@connectrpc/connect": "^1.4.0",
+    "@connectrpc/connect-node": "^1.4.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.0"
+  }
+}
+```
+
+## Benefits of This Change
+
+By managing your own package.json, you gain:
+
+1. **Full Control** - Choose exactly which dependencies and versions you need
+2. **Flexibility** - Customize package.json structure for your project needs
+3. **Version Management** - Update dependencies on your own schedule
+4. **Standard Workflow** - Align with standard JavaScript/TypeScript project practices
+5. **Better Integration** - Easier integration with existing projects and tooling
+
+## Common Questions
+
+### Do I need to change my import statements?
+
+No, import statements remain the same. The change only affects how package.json is managed, not the generated code.
+
+### Can I use a different package manager?
+
+Yes! You can use npm, yarn, pnpm, or any other JavaScript package manager of your choice.
+
+### What if I have multiple output targets?
+
+Create separate package.json files for each output directory, or use a monorepo structure with workspaces.
+
+### How do I know which dependencies I need?
+
+The dependencies depend on which Bufrnix features you're using:
+
+- **Protobuf-ES**: `@bufbuild/protobuf`
+- **Connect-ES**: `@bufbuild/protobuf`, `@connectrpc/connect`, `@connectrpc/connect-node`
+- **Protovalidate-ES**: `@bufbuild/protovalidate`
+- **ts-proto**: `nice-grpc`, `@grpc/grpc-js` (if using gRPC output)
+
+Check the [JavaScript language reference](/reference/languages/javascript) for complete dependency information.
+
+## Need Help?
+
+If you encounter issues during migration:
+
+1. Check the [JavaScript language documentation](/reference/languages/javascript)
+2. Review the [example projects](https://github.com/conneroisu/bufrnix/tree/main/examples)
+3. Open an issue on [GitHub](https://github.com/conneroisu/bufrnix/issues)

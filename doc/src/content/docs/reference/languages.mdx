@@ -595,16 +595,12 @@ languages = {
     es = {
       enable = true;  # Enabled by default
       target = "ts";  # Options: "js", "ts", "dts"
-      generatePackageJson = true;
-      packageName = "@myproject/proto";
       importExtension = ".js";  # For Node.js ES modules
     };
 
     # Connect-ES - Modern RPC framework
     connect = {
       enable = true;  # Integrated with protoc-gen-es v2
-      generatePackageJson = true;
-      packageName = "@myproject/connect";
     };
 
     # Runtime validation support
@@ -616,7 +612,6 @@ languages = {
     # Alternative: ts-proto for different style
     tsProto = {
       enable = false;  # Set to true for interface-style TypeScript
-      generatePackageJson = true;
       generateTsConfig = true;
       options = [
         "esModuleInterop=true"
@@ -631,6 +626,9 @@ languages = {
     };
   };
 };
+
+# Note: Bufrnix no longer generates package.json files. You should manage your
+# package.json manually in your project.
 ```
 
 ### Generated Code Features

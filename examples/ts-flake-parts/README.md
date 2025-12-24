@@ -204,8 +204,6 @@ The `flake.nix` demonstrates how to integrate Bufrnix with flake-parts:
                 es = {
                   enable = true;
                   target = "ts";
-                  generatePackageJson = true;
-                  packageName = "@example/proto-ts";
                 };
                 connect.enable = true;
                 protovalidate.enable = true;
@@ -226,6 +224,8 @@ The `flake.nix` demonstrates how to integrate Bufrnix with flake-parts:
     };
 }
 ```
+
+**Note**: You must manage your own `package.json` file with the appropriate dependencies. See the example `package.json` in this directory.
 
 ## Commands
 

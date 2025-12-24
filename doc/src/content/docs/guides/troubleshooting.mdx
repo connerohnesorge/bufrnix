@@ -193,24 +193,26 @@ languages.go = {
 Cannot find module '@myorg/proto'
 ```
 
-**Solutions:**
+**Solution:**
 
-1. **Check package.json generation:**
+Bufrnix no longer generates package.json files. You need to manage imports manually in your project. Either:
 
-   ```nix
-   languages.js = {
-     enable = true;
-     es = {
-       enable = true;
-       generatePackageJson = true;
-       packageName = "@myorg/proto";
-     };
-   };
+1. **Use relative imports:**
+
+   ```typescript
+   import { User } from "./gen/js/user_pb.js";
    ```
 
-2. **Install generated packages:**
-   ```bash
-   npm install ./gen/js  # If package.json was generated
+2. **Configure TypeScript path aliases in tsconfig.json:**
+
+   ```json
+   {
+     "compilerOptions": {
+       "paths": {
+         "@myorg/proto/*": ["./gen/js/*"]
+       }
+     }
+   }
    ```
 
 **Error: TypeScript type errors**

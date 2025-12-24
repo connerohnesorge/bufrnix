@@ -117,9 +117,6 @@ in {
       ${optionalString cfg.es.enable ''
         mkdir -p "${esOutputPath}"
       ''}
-      ${optionalString (cfg.packageName != "") ''
-        echo "Creating JS package: ${cfg.packageName}"
-      ''}
     '')
     + concatStrings (catAttrs "initHooks" [
       grpcWebModule
@@ -138,44 +135,9 @@ in {
         echo "Using ES modules (protoc-gen-es) or other alternatives instead."
       ''}
 
-      # Generate package.json for ES modules if requested
-      ${optionalString (cfg.es.enable && cfg.es.generatePackageJson) (let
-        esOutputPath =
-          if (cfg.es.outputPath != null)
-          then cfg.es.outputPath
-          else outputPath;
-      in ''
-                cat > ${esOutputPath}/package.json <<EOF
-        {
-          "name": "${
-          if cfg.es.packageName != ""
-          then cfg.es.packageName
-          else "generated-protobuf-es"
-        }",
-          "version": "1.0.0",
-          "type": "module",
-          "main": "./index.js",
-          "types": "./index.d.ts",
-          "exports": {
-            ".": {
-              "import": "./index.js",
-              "types": "./index.d.ts"
-            },
-            "./*": {
-              "import": "./*.js",
-              "types": "./*.d.ts"
-            }
-          },
-          "dependencies": {
-            "@bufbuild/protobuf": "^1.10.0"
-          },
-          "devDependencies": {
-            "typescript": "^5.3.0"
-          }
-        }
-        EOF
-                echo "Generated package.json for ES modules"
-      '')}
+      # Note: package.json should be managed by the project itself, not auto-generated.
+      # Users should maintain their own package.json with appropriate dependencies
+      # for their specific use case (e.g., @bufbuild/protobuf, typescript, etc.).
     ''
     + concatStrings (catAttrs "generateHooks" [
       grpcWebModule

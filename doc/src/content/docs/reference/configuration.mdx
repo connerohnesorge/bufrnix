@@ -3,7 +3,17 @@ title: Configuration Reference
 description: Complete reference for all Bufrnix configuration options and settings with examples.
 ---
 
-import { Card, CardGrid, Tabs, TabItem, Code, Badge, LinkCard, FileTree, Aside } from "@astrojs/starlight/components";
+import {
+  Card,
+  CardGrid,
+  Tabs,
+  TabItem,
+  Code,
+  Badge,
+  LinkCard,
+  FileTree,
+  Aside,
+} from "@astrojs/starlight/components";
 
 # Configuration Reference
 
@@ -15,10 +25,12 @@ Bufrnix configuration prioritizes **explicitness over magic** and **reproducibil
 
 <CardGrid>
   <Card title="Type-safe" icon="check">
-    All options are validated at evaluation time, catching errors before generation runs
+    All options are validated at evaluation time, catching errors before
+    generation runs
   </Card>
   <Card title="Reproducible" icon="rocket">
-    Same configuration = identical outputs across all environments and team members
+    Same configuration = identical outputs across all environments and team
+    members
   </Card>
   <Card title="Explicit dependencies" icon="shield">
     No hidden network calls or surprise downloads - everything declared upfront
@@ -29,7 +41,9 @@ Bufrnix configuration prioritizes **explicitness over magic** and **reproducibil
 </CardGrid>
 
 <Aside type="tip" title="Production Ready">
-This approach trades some initial setup time for long-term reliability, making Bufrnix ideal for production systems where consistency matters more than convenience.
+  This approach trades some initial setup time for long-term reliability, making
+  Bufrnix ideal for production systems where consistency matters more than
+  convenience.
 </Aside>
 
 ## Basic Configuration Structure
@@ -86,29 +100,21 @@ This approach trades some initial setup time for long-term reliability, making B
       python = { enable = true; outputPath = "gen/python"; };
       # ... other languages
     };
-  };
+
+};
 }`}
-  lang="nix"
-  title="Complete configuration structure"
+lang="nix"
+title="Complete configuration structure"
 />
 
 </TabItem>
 </Tabs>
 
 <FileTree>
-- project/
-  - flake.nix          ← Bufrnix configuration here
-  - proto/
-    - user/v1/
-      - user.proto
-  - gen/               ← Generated code output
-    - go/
-    - python/
-    - js/
+  - project/ - flake.nix ← Bufrnix configuration here - proto/ - user/v1/ -
+  user.proto - gen/ ← Generated code output - go/ - python/ - js/
 </FileTree>
-  };
-}
-```
+}; } ```
 
 ## Root Configuration
 
@@ -218,7 +224,7 @@ languages = {
     ];
     grpc.enable = true;
   };
-  
+
   js = {
     # Frontend: Public APIs + Google annotations
     additionalFiles = [
@@ -236,29 +242,29 @@ languages = {
 
 **Configuration Options:**
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `languages.*.files` | list of strings or null | `null` | Proto files for this language only. Overrides global `protoc.files` |
-| `languages.*.additionalFiles` | list of strings | `[]` | Additional files to add to global `protoc.files` for this language |
+| Option                        | Type                    | Default | Description                                                         |
+| ----------------------------- | ----------------------- | ------- | ------------------------------------------------------------------- |
+| `languages.*.files`           | list of strings or null | `null`  | Proto files for this language only. Overrides global `protoc.files` |
+| `languages.*.additionalFiles` | list of strings         | `[]`    | Additional files to add to global `protoc.files` for this language  |
 
 **Use Cases:**
 
 <CardGrid>
   <Card title="Backend + Frontend Separation" icon="split">
-    **Problem**: Different services for different tiers  
-    **Solution**: `go.files` for internal services, `js.additionalFiles` for public APIs
+    **Problem**: Different services for different tiers **Solution**: `go.files`
+    for internal services, `js.additionalFiles` for public APIs
   </Card>
   <Card title="Google Annotations Linting" icon="shield">
-    **Problem**: Go + Google annotations = linting errors  
-    **Solution**: Exclude Google annotations from Go, include in JavaScript
+    **Problem**: Go + Google annotations = linting errors **Solution**: Exclude
+    Google annotations from Go, include in JavaScript
   </Card>
   <Card title="Security Boundaries" icon="lock">
-    **Problem**: Frontend accessing internal services  
-    **Solution**: Use `files` to enforce strict separation at build time
+    **Problem**: Frontend accessing internal services **Solution**: Use `files`
+    to enforce strict separation at build time
   </Card>
   <Card title="Build Performance" icon="rocket">
-    **Problem**: All languages process all files  
-    **Solution**: Each language processes only relevant files
+    **Problem**: All languages process all files **Solution**: Each language
+    processes only relevant files
   </Card>
 </CardGrid>
 
@@ -266,10 +272,11 @@ languages = {
 **Backward Compatible**: Existing configurations work unchanged. Per-language files are opt-in enhancements.
 
 **Migration Path**:
+
 1. Start with global `protoc.files` (current behavior)
-2. Add `additionalFiles` for language-specific extensions  
+2. Add `additionalFiles` for language-specific extensions
 3. Use `files` for complete per-language control
-</Aside>
+   </Aside>
 
 ## Language Support
 
@@ -364,22 +371,19 @@ Modern JavaScript/TypeScript support with multiple output formats and RPC framew
 languages.js = {
   enable = true;
   outputPath = "src/proto";
-  packageName = "@myorg/proto";
 
   # Modern ECMAScript modules with TypeScript (recommended)
   es = {
     enable = true;
     target = "ts";                    # Generate TypeScript
     options = ["import_extension=.js"]; # ES module extensions
-    generatePackageJson = true;
-    packageName = "@myorg/proto-es";
+    # Note: Manage your package.json file manually in your project
   };
 
   # Connect-ES for modern RPC
   connect = {
     enable = true;
-    generatePackageJson = true;
-    packageName = "@myorg/proto-connect";
+    # Note: Manage your package.json file manually in your project
   };
 
   # gRPC-Web for browser compatibility
@@ -404,20 +408,25 @@ languages.js = {
   tsProto = {
     enable = true;
     options = ["esModuleInterop=true" "useOptionals=messages"];
-    generatePackageJson = true;
     generateTsConfig = true;
+    # Note: Manage your package.json file manually in your project
   };
 };
 ```
 
 #### JavaScript Configuration Options
 
-| Option        | Type            | Default    | Description                                  |
-| ------------- | --------------- | ---------- | -------------------------------------------- |
-| `enable`      | boolean         | `false`    | Enable JavaScript/TypeScript code generation |
-| `outputPath`  | string          | `"gen/js"` | Output directory for generated code          |
-| `packageName` | string          | `""`       | JavaScript package name                      |
-| `options`     | list of strings | `[]`       | Options to pass to protoc JS plugins         |
+| Option       | Type            | Default    | Description                                  |
+| ------------ | --------------- | ---------- | -------------------------------------------- |
+| `enable`     | boolean         | `false`    | Enable JavaScript/TypeScript code generation |
+| `outputPath` | string          | `"gen/js"` | Output directory for generated code          |
+| `options`    | list of strings | `[]`       | Options to pass to protoc JS plugins         |
+
+<Aside type="note">
+  **Package Management**: Bufrnix focuses on protobuf generation. Manage your
+  `package.json` file manually in your project to define dependencies and
+  metadata.
+</Aside>
 
 ### Dart Configuration
 
@@ -796,12 +805,10 @@ Here's a comprehensive example showing multiple languages configured together:
           js = {
             enable = true;
             outputPath = "web/src/proto";
-            packageName = "@myorg/proto";
 
             es = {
               enable = true;
               target = "ts";
-              generatePackageJson = true;
             };
 
             connect.enable = true;
