@@ -1,26 +1,27 @@
-/* Bufrnix Configuration Options Schema
+/*
+Bufrnix Configuration Options Schema
 
-   This module defines the complete configuration schema for Bufrnix, including:
-   - Core project settings (root directory, debug options)
-   - Protoc compiler configuration (source/include directories, file lists)
-   - Language-specific configuration for all supported languages
-   - Plugin configurations for each language's ecosystem
-   
-   The options provide type safety, validation, and default values for all
-   configuration parameters used in Protocol Buffer code generation.
-   
-   Supported Languages:
-   - Go: Complete ecosystem with gRPC, Connect, Gateway, Validate, etc.
-   - JavaScript/TypeScript: ES modules, gRPC-Web, Twirp
-   - Python: Standard protobuf, gRPC, betterproto, mypy integration
-   - Java: Standard protobuf, gRPC, validation
-   - C#: .NET support with project file generation
-   - C/C++: protobuf-c, nanopb, gRPC
-   - PHP: Framework integration (Laravel/Symfony), RoadRunner, async
-   - Dart: Flutter/mobile development support
-   - And many more...
-   
-   Type: BufrnixOptions :: { options :: AttrSet; }
+This module defines the complete configuration schema for Bufrnix, including:
+- Core project settings (root directory, debug options)
+- Protoc compiler configuration (source/include directories, file lists)
+- Language-specific configuration for all supported languages
+- Plugin configurations for each language's ecosystem
+
+The options provide type safety, validation, and default values for all
+configuration parameters used in Protocol Buffer code generation.
+
+Supported Languages:
+- Go: Complete ecosystem with gRPC, Connect, Gateway, Validate, etc.
+- JavaScript/TypeScript: ES modules, gRPC-Web, Twirp
+- Python: Standard protobuf, gRPC, betterproto, mypy integration
+- Java: Standard protobuf, gRPC, validation
+- C#: .NET support with project file generation
+- C/C++: protobuf-c, nanopb, gRPC
+- PHP: Framework integration (Laravel/Symfony), RoadRunner, async
+- Dart: Flutter/mobile development support
+- And many more...
+
+Type: BufrnixOptions :: { options :: AttrSet; }
 */
 {lib, ...}:
 with lib; {
@@ -880,12 +881,6 @@ with lib; {
           description = "Options to pass to protoc JS plugins";
         };
 
-        packageName = mkOption {
-          type = types.str;
-          default = "";
-          description = "JavaScript package name for generated code";
-        };
-
         # ECMAScript modules support with Protobuf-ES (default TypeScript generator)
         es = {
           enable = mkOption {
@@ -928,18 +923,6 @@ with lib; {
             type = types.str;
             default = ""; # Let protoc-gen-es handle defaults
             description = "Import extension to use (e.g., '.js' for Node.js ES modules)";
-          };
-
-          generatePackageJson = mkOption {
-            type = types.bool;
-            default = false;
-            description = "Generate package.json for the generated code";
-          };
-
-          packageName = mkOption {
-            type = types.str;
-            default = "";
-            description = "Package name for generated package.json";
           };
         };
 
@@ -1069,24 +1052,6 @@ with lib; {
             type = types.listOf types.str;
             default = [];
             description = "Options to pass to ts-proto (e.g., esModuleInterop=true, useOptionals=messages)";
-          };
-
-          generatePackageJson = mkOption {
-            type = types.bool;
-            default = false;
-            description = "Generate package.json for the generated code";
-          };
-
-          generateTsConfig = mkOption {
-            type = types.bool;
-            default = false;
-            description = "Generate tsconfig.json for the generated code";
-          };
-
-          packageName = mkOption {
-            type = types.str;
-            default = "";
-            description = "Package name for generated package.json";
           };
         };
       };
@@ -2134,12 +2099,6 @@ with lib; {
           type = types.str;
           default = "1.8.0";
           description = "Kotlin coroutines version";
-        };
-
-        generateBuildFile = mkOption {
-          type = types.bool;
-          default = true;
-          description = "Generate build.gradle.kts file";
         };
 
         generatePackageInfo = mkOption {

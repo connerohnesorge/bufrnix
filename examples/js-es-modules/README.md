@@ -117,12 +117,7 @@ languages = {
     es = {
       enable = true;               # Enabled by default
       target = "ts";               # Generate TypeScript
-      generatePackageJson = true;  # Create package.json
       importExtension = ".js";     # For Node.js compatibility
-    };
-    connect = {
-      enable = true;               # Enable Connect-ES
-      generatePackageJson = true;
     };
     protovalidate = {
       enable = true;               # Enable validation
@@ -134,6 +129,8 @@ languages = {
 };
 ```
 
+**Note**: You must manage your own `package.json` file with the appropriate dependencies for your project. See the example `package.json` in this directory.
+
 ## Alternative: ts-proto
 
 You can also enable ts-proto for a different style of TypeScript generation:
@@ -141,8 +138,6 @@ You can also enable ts-proto for a different style of TypeScript generation:
 ```nix
 tsProto = {
   enable = true;
-  generatePackageJson = true;
-  generateTsConfig = true;
   options = [
     "esModuleInterop=true"
     "outputServices=nice-grpc"

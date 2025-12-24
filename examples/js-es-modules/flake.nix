@@ -32,8 +32,6 @@
               es = {
                 enable = true; # This is now default true
                 target = "ts"; # Generate TypeScript by default
-                generatePackageJson = true;
-                packageName = "@example/proto";
                 importExtension = ".js"; # For Node.js ES modules compatibility
               };
               # TypeScript validation support
